@@ -7,8 +7,16 @@
 
 A statechart is similar to a FSM (finite state machine), but extends the concept with hierarchy, concurrency, and communication.
 
-
 ## Why statecharts?
+
+Most programs have a lot of implicit and ad-hoc state mutation that is difficult to understand and leads to bugs.
+In simple cases there is not much of an issue.
+However, as applications become complex this gives every new feature the potential to break existing features.
+Statecharts were originally created to wrangle the complexity of jet fighter software, but I think they can scale down nicely also.
+Rather than having imiplicit state, Statecharts allow us to be very explicit about state.
+This leads to fewer defects and even lets us explain how our application operates to non-programmers.
+
+## Why not FSMs?
 
 * FSMs lack nested and concurrent states
 * Routing is often used to describe application state. However, routing has difficulty handling concurrent states, handling nested state transitions, and maintaining history of different branches.
@@ -16,12 +24,12 @@ A statechart is similar to a FSM (finite state machine), but extends the concept
 
 ## StateTree
 
-StateTree is a simplification of the statechart concept applied to UI state.
+StateTree is a simplification of the statechart concept. 
 Our statechart is modeled as a tree (hierarchy) with multiple active branches (concurrency).
 There are no library features for the broadcast communication aspect of statecharts.
 
 StateTree was developed for managing the state of a typical client-side UI where the user is able to navigate around the entire UI.
-There are few illegal state transitions, so this library currently has no way to restrict state transitions other than to make some states private.
+There are few illegal state transitions in such a scenario, so this library provides no tools to restrict state transitions, although you can achieve this to a certain extent by making states private.
 
 As a result, StateTree is smaller and simpler than any other statechart library I have found.
 You may find its features to be lacking.
@@ -122,7 +130,9 @@ If you want to send data with a transition, just create a wrapper function (and 
 
 ## Limiting/Enforcing transitions
 
-If you want to limit access, just export a new object rather than all of the states
+If you want to limit access, just export a new object rather than all of the states.
+Instead of exporting states, you can export functions.
+ These can handle data and limit usage to only valid state transitions.
 
      return {
        goToStateA: goToStateA
