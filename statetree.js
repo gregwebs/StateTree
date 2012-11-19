@@ -152,12 +152,10 @@ var makeStateTree = (function (_) {
             throw new Error("impossible!");
         }
         exitStates(exited);
-        if(DEBUG) {
-            _.each(entered, function (state) {
-                return console.log("entering " + state.name);
-            });
-        }
         _.each(entered, function (state) {
+            if(DEBUG) {
+                console.log("entering " + state.name);
+            }
             statechart.isActive[state.name] = true;
             safeCallback(statechart, state.enterFn, state);
         });
