@@ -76,6 +76,7 @@ The state tree
 
 ## Example: Application & UI state
 
+~~~~~~~~~~~~~~ {.js}
      function login(){} // login service
 
      var tree = makeStateTree()
@@ -101,6 +102,7 @@ The state tree
 
      // start up the application
      authenticate.goTo()
+~~~~~~~~~~~~~~
 
 
 * loggedin has concurrent substates (main and popup)
@@ -126,6 +128,7 @@ History states let us know the previous substate so we can easily restore previo
 There is no event sytem.
 If you want to send data with a transition, just create a wrapper function (and tie it to an event if you want).
 
+~~~~~~~~~~~~~~ {.js}
      // wrapper function
      function goToStateA(arg1) {
        // do something with arg1
@@ -134,6 +137,7 @@ If you want to send data with a transition, just create a wrapper function (and 
 
      // event hook: use your own event system
      myEventSystem.on('stateAEvent', goToStateA)
+~~~~~~~~~~~~~~
 
 
 ## Limiting/Enforcing transitions
