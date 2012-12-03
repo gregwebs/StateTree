@@ -77,31 +77,36 @@ The state tree
 ## Example: Application & UI state
 
 ~~~~~~~~~~~~~~ {.js}
-     function login(){} // login service
+// login service
+function login(){ return {onApplicationStart:function(cb){setTimeout(cb)}} }
 
-     var tree = makeStateTree()
-     var authenticate = tree.root.subState("authenticate")
-       .enter(function(){ login.onApplicationStart(function(){ loggedin.goTo()}})
+var tree = makeStateTree()
+var authenticate = tree.root.subState("authenticate")
+ .enter(function(){ login.onApplicationStart(function(){ loggedin.goTo()}})
 
-     var loggedin      = authenticate.subState("loggedin")
-       .concurrentSubStates()
-       .enter(function(){ main.goTo()})
+var loggedin = authenticate.subState("loggedin", function(loggedin){
+  loggedin.concurrentSubStates()
+  .enter(function(){ main.goTo()})
 
-     var main = loggedin.subState("main")
+  loggedin.subState("main", function(main){
+    main.subState('tab1')
+      .defaultSubState()
+      .enter(function(){ UI.activateTab('tab1')})
+     
+    main.subState('tab2')
+     .enter(function(){ UI.activateTab('tab2')})
+  }) 
+  
+  loggedin.subState("popup", function(popup){
+    popup.subState("open")
+    
+    popup.subState("closed")
+      .enter(function(){ UI.unmask() })
+  })
+})
 
-     var popup  = loggedin.subState("popup")
-     var open   = popup.subState("open")
-     var closed = popup.subState("closed")
-       .enter(function(){ UI.unmask() })
-
-     var tab1 = main.subState('tab1')
-       .defaultSubState()
-       .enter(function(){ UI.activateTab('tab1')})
-     var tab2 = main.subState('tab2')
-       .enter(function(){ UI.activateTab('tab2')})
-
-     // start up the application
-     authenticate.goTo()
+// start up the application
+authenticate.goTo()
 ~~~~~~~~~~~~~~
 
 
@@ -150,3 +155,10 @@ These can handle data and limit usage to only valid state transitions.
        goToStateA: goToStateA
      , stateB: stateB // public
      }
+
+
+## Flexible state lookup
+
+Programming in strings is not safe, but sometimes gets the job done quickly.
+You can lookup a state from its name with `tree.statesByName`.
+
