@@ -9,17 +9,22 @@ A statechart is similar to a FSM (finite state machine), but extends the concept
 
 ## Why statecharts?
 
-Most programs have a lot of implicit and ad-hoc state mutation that is difficult to understand and leads to bugs.
-In simple cases there is not much of an issue.
+Most applications have a lot of implicit and ad-hoc state mutation that is difficult to understand and leads to bugs.
+In a simple app it is easy enough to manage by paying attention to detail.
 However, as applications become complex this gives every new feature the potential to break existing features.
 Statecharts were originally created to wrangle the complexity of jet fighter software, but I think they can scale down nicely also.
-Rather than having imiplicit state, Statecharts allow us to be very explicit about state.
+Rather than having implicit state mutation, Statecharts allow us to be very explicit about state and how it can be changed.
 This leads to fewer defects and even lets us explain how our application operates to non-programmers.
 
 ## Why not FSMs?
 
-* FSMs lack nested and concurrent states
-* Routing is often used to describe application state. However, routing has difficulty handling concurrent states, handling nested state transitions, and maintaining history of different branches.
+FSMs lack nested and concurrent states
+
+
+## Why not routing?
+
+Routing is often used to describe application state. However, routing has difficulty handling concurrent states, handling nested state transitions, and maintaining history of different branches.
+Ember.js has taken a great approach of combining routing with a statechart. However, their code, including the underlying statemachine library does not work outside of the Ember framework.
 
 
 ## StateTree
@@ -44,14 +49,14 @@ However, switching to using a more featureful statechart library should be strai
 
 Most other statechart libraries ask you to give a large JSON structure to describe your state chart.
 JSON hierarchy looks nice, but these structures normally rely on strings that are a typo away from silent error.
-StateTree instead uses setter methods because they will always fail immediately at runtime if mis-typed.
+StateTree instead uses setter methods because they will always fail immediately at runtime if mistyped.
 StateTree leverages TypeScript to reduce bugs in the implementation.
-You can also use TypeScript in your usage of this library to move some errors to compile time and get autocompletion.
+You can also use TypeScript in your usage of this library to move some errors from runtime to compile time and also to get better autocompletion.
 
 
-# Requirements
+# Dependencies
 
-lodash/underscore
+lodash/underscore (this dependency can be removed in the future)
 
 
 # Development Requirements
@@ -71,27 +76,30 @@ The state tree
 
 ## Example: Application & UI state
 
-     var chart = makeStateTree()
-     var authenticate:State = chart.root.subState("authenticate")
-       .enter(() => login.onApplicationStart(() => loggedin.goTo()))
+     function login(){} // login service
+
+     var tree = makeStateTree()
+     var authenticate = tree.root.subState("authenticate")
+       .enter(function(){ login.onApplicationStart(function(){ loggedin.goTo()}})
 
      var loggedin      = authenticate.subState("loggedin")
        .concurrentSubStates()
-       .enter(() => main.goTo())
+       .enter(function(){ main.goTo()})
 
-     var main:State = loggedin.subState("main")
+     var main = loggedin.subState("main")
 
-     var popup  :State = loggedin.subState("popup")
-     var open:State    = popup.subState("open")
-     var closed :State = popup.subState("closed")
-       .enter( () => UI.unmask() )
+     var popup  = loggedin.subState("popup")
+     var open   = popup.subState("open")
+     var closed = popup.subState("closed")
+       .enter(function(){ UI.unmask() })
 
-     var tab1:State = main.subState('tab1')
+     var tab1 = main.subState('tab1')
        .defaultSubState()
-       .enter(() => UI.activateTab('tab1'))
-     var tab2:State = main.subState('tab2')
-       .enter(() => UI.activateTab('tab2'))
+       .enter(function(){ UI.activateTab('tab1')})
+     var tab2 = main.subState('tab2')
+       .enter(function(){ UI.activateTab('tab2')})
 
+     // start up the application
      authenticate.goTo()
 
 
@@ -110,7 +118,7 @@ History states let us know the previous substate so we can easily restore previo
     state.history
 
     // if there is a history state always go to it instead of the default state
-    chart.defaultToHistoryState()
+    tree.defaultToHistoryState()
 
 
 ## Events
@@ -132,7 +140,7 @@ If you want to send data with a transition, just create a wrapper function (and 
 
 If you want to limit access, just export a new object rather than all of the states.
 Instead of exporting states, you can export functions.
- These can handle data and limit usage to only valid state transitions.
+These can handle data and limit usage to only valid state transitions.
 
      return {
        goToStateA: goToStateA
