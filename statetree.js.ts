@@ -1,7 +1,13 @@
-/// <reference path="statetree.d.ts" />
+/// <reference path="../../../common/types/statechart-typed.d.ts" />
 declare var lodash // remove lodash dependency?
 
-var makeStateTree = (function(_){
+// for exports
+declare var ender
+declare var define
+declare var module
+interface Window { makeStateTree():StateChart; }
+
+(function(_, undefined){
   var DEBUG = true
   var State = function(name:string, parentState?:AnyState):undefined {
     this.name = name
@@ -16,8 +22,10 @@ var makeStateTree = (function(_){
     }
   }
 
-  State.prototype.subState = function(name:string):State {
-    return new State(name, this)
+  State.prototype.subState = function(name:string, nestingFn?: StateCallback):State {
+    var state = new State(name, this)
+    if (nestingFn) nestingFn(state)
+    return state
   }
   State.prototype.defaultState = function():State {
     if(!this.parentState) throw new Error("cannot default root state")
@@ -53,7 +61,7 @@ var makeStateTree = (function(_){
     this.exitFn = fn
     return this
   }
-  State.prototype.activeSubState = function():State {
+  State.prototype.activeChildState = function():State {
     return _.find(this.childStates, (state) => this.statechart.isActive[state.name])
   }
 
@@ -215,5 +223,11 @@ var makeStateTree = (function(_){
     return chart;
   }
 
-  return () => StateChart(new State("root"))
-})(lodash)
+  var makeStateTree = () => StateChart(new State("root"))
+
+  // module is a reserved word in TypeScript, guess I need to use their module thing
+  // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }
+  if(typeof window !== "undefined") { window.makeStateTree = makeStateTree; }
+  if (typeof ender === 'undefined') { this['makeStateTree'] = makeStateTree; }
+  if (typeof define === "function" && define.amd) { define("makeStateTree", [], function () { return makeStateTree; }); }
+}).call(this, lodash)
