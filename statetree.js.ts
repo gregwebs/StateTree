@@ -1,4 +1,4 @@
-/// <reference path="../../../common/types/statechart-typed.d.ts" />
+/// <reference path="./statetree.d.ts" />
 declare var lodash // remove lodash dependency?
 
 // for exports
