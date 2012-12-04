@@ -1,3 +1,5 @@
+interface Window { angular: any; }
+
 interface StateChart {
   root: RootState;
   currentStates():AnyState[];
@@ -7,6 +9,10 @@ interface StateChart {
   handleError: Function;
   defaultToHistory: Boolean;
   defaultToHistoryState();
+}
+
+interface StateCallback {
+  (state:State): undefined;
 }
 
 interface AnyState {
@@ -24,7 +30,7 @@ interface AnyState {
   enter(fn:Function):State;
   exit(fn:Function):State;
 
-  subState(name:String):State;
+  subState(name:String, nestingFn?: StateCallback): State;
   defaultTo(state:State):State;
   changeDefaultTo(state:State):State;
 

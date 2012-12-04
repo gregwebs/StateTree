@@ -1,4 +1,4 @@
-var makeStateTree = (function (_) {
+(function (_, undefined) {
     var DEBUG = true;
     var State = function (name, parentState) {
         this.name = name;
@@ -11,8 +11,12 @@ var makeStateTree = (function (_) {
             this.statechart.statesByName[name] = this;
         }
     };
-    State.prototype.subState = function (name) {
-        return new State(name, this);
+    State.prototype.subState = function (name, nestingFn) {
+        var state = new State(name, this);
+        if(nestingFn) {
+            nestingFn(state);
+        }
+        return state;
     };
     State.prototype.defaultState = function () {
         if(!this.parentState) {
@@ -56,7 +60,7 @@ var makeStateTree = (function (_) {
         this.exitFn = fn;
         return this;
     };
-    State.prototype.activeSubState = function () {
+    State.prototype.activeChildState = function () {
         var _this = this;
         return _.find(this.childStates, function (state) {
             return _this.statechart.isActive[state.name];
@@ -216,7 +220,18 @@ var makeStateTree = (function (_) {
         root.statechart = chart;
         return chart;
     };
-    return function () {
+    var makeStateTree = function () {
         return StateChart(new State("root"));
+    };
+    if(typeof window !== "undefined") {
+        window.makeStateTree = makeStateTree;
     }
-})(lodash);
+    if(typeof ender === 'undefined') {
+        this['makeStateTree'] = makeStateTree;
+    }
+    if(typeof define === "function" && define.amd) {
+        define("makeStateTree", [], function () {
+            return makeStateTree;
+        });
+    }
+}).call(this, lodash);

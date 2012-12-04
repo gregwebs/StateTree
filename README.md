@@ -162,3 +162,8 @@ These can handle data and limit usage to only valid state transitions.
 Programming in strings is not safe, but sometimes gets the job done quickly.
 You can lookup a state from its name with `tree.statesByName`.
 
+
+## Using with AngularJS
+
+If you would like, you can turn this into a service
+angular.module('statechart', []).factory('statetree', () => makeStateTree)
