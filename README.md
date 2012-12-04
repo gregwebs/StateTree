@@ -165,5 +165,23 @@ You can lookup a state from its name with `tree.statesByName`.
 
 ## Using with AngularJS
 
-If you would like, you can turn this into a service
-angular.module('statechart', []).factory('statetree', () => makeStateTree)
+First make sure to require the statetree.js file.
+
+You may want to make this library a module value
+
+    angular.module('statetree', []).value('statetree', window.makeStateTree)
+
+Then your own state service for your own application.
+
+    angular.module('AppState', [])
+    .factory('appState', ['statetree'], function(statetree){
+      // code from examples above goes here
+    })
+
+
+Now you can use this service in your controller
+
+    angular.module('Controllers', [])
+    .controller('ShowPopupController', ['$scope', 'statechart', function(){
+      $scope.closePopup = function() { statechart.closed.goTo() }
+    }]
