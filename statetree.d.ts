@@ -4,8 +4,9 @@ interface StateChart {
   root: RootState;
   currentStates():AnyState[];
   activeStates(): AnyState[];
-  isActive: {[s:string]: Boolean;};
-  statesByName: {[s:string]: AnyState;};
+  isActive: {[name:string]: Boolean;};
+  statesByName: {[name:string]: AnyState;};
+  stateFromName(name:string): AnyState;
   handleError: Function;
   defaultToHistory: Boolean;
   defaultToHistoryState();

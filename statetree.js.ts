@@ -196,12 +196,21 @@ interface Window { makeStateTree():StateChart; }
 
     var chart = {
       root: root
+      // stateFromName is preferred. won't throw an error.
     , statesByName: statesByName
+      // get a state object from its name.
+      // throw error if state name does not exist
+    , stateFromName: (name:string):State => {
+        var res = statesByName[name]
+        if (!res) throw new Error("invalid state name: " + name)
+        return res
+      }
     , isActive: isActive
     , handleError: (e) => {
       if(e.message) console.log(e.message)
       if(e.stack)   console.log(e.stack)
     }
+      // if true, always use the history state once it is available as the default state
     , defaultToHistory: false
     , defaultToHistoryState: function(){ this.defaultToHistory = true }
     , activeStates: function(){ 
@@ -209,6 +218,7 @@ interface Window { makeStateTree():StateChart; }
         iterateActive(this.root, (state) => actives.push(state))
         return actives
       }
+      // return just the leaves of the active states
     , currentStates: function(){ 
         var leaves = []
         var statechart = this

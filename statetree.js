@@ -180,6 +180,13 @@
         var chart = {
             root: root,
             statesByName: statesByName,
+            stateFromName: function (name) {
+                var res = statesByName[name];
+                if(!res) {
+                    throw new Error("invalid state name: " + name);
+                }
+                return res;
+            },
             isActive: isActive,
             handleError: function (e) {
                 if(e.message) {

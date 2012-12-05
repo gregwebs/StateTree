@@ -128,6 +128,11 @@ History states let us know the previous substate so we can easily restore previo
     tree.defaultToHistoryState()
 
 
+## Dynamic state lookup
+
+    tree.stateFromName('loggedIn')
+
+
 ## Events
 
 There is no event sytem.
