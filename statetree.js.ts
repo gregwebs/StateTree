@@ -78,7 +78,7 @@ interface Window { makeStateTree():StateChart; }
     _.each(exited.reverse(), (state:State) => {
       state.statechart.isActive[state.name] = false
       if(state.parentState) state.parentState.history = state
-      if(DEBUG) { console.log("exiting: " + state.name + " history of " + state.parentState.name) }
+      state.statechart.exitFn(state)
       safeCallback(state.statechart, state.exitFn, state)
     })
   }
@@ -172,17 +172,13 @@ interface Window { makeStateTree():StateChart; }
     exitStates(exited)
 
     _.each(entered, (state:State) => {
-      if(DEBUG) console.log("entering " + state.name)
+      statechart.enterFn(state)
       statechart.isActive[state.name] = true
       safeCallback(statechart, state.enterFn, state)
     })
 
     if (DEBUG) {
-      if (statechart.currentStates().indexOf(expected) == -1) {
-        throw new Error("expected to go to state " + this.name +
-        ", but now in states " +
-        _(statechart.currentStates()).pluck('name').join(","))
-      }
+      if (statechart.currentStates().indexOf(expected) == -1) { throw new Error("expected to go to state " + this.name + ", but now in states " + _(statechart.currentStates()).pluck('name').join(",")) }
     }
 
     return handlePendingGoTo(this)
@@ -227,6 +223,22 @@ interface Window { makeStateTree():StateChart; }
             leaves.push(state)
         })
         return (leaves.length == 0) ? [this.root] : leaves
+      }
+    , enterFn: (state:State) => {
+        if(DEBUG) console.log("entering " + state.name)
+      }
+    , enter: function(fn:(State) => undefined){
+        this.enterFn = fn
+        return this
+      }
+    , exitFn: (state:State) => {
+        if(DEBUG) {
+          console.log("exiting: " + state.name + " history of " + state.parentState.name)
+        }
+      }
+    , exit: function(fn:(State) => undefined){
+        this.exitFn = fn
+        return this
       }
     }
     root.statechart = chart;

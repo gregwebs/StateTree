@@ -86,9 +86,7 @@
             if(state.parentState) {
                 state.parentState.history = state;
             }
-            if(DEBUG) {
-                console.log("exiting: " + state.name + " history of " + state.parentState.name);
-            }
+            state.statechart.exitFn(state);
             safeCallback(state.statechart, state.exitFn, state);
         });
     };
@@ -157,9 +155,7 @@
         }
         exitStates(exited);
         _.each(entered, function (state) {
-            if(DEBUG) {
-                console.log("entering " + state.name);
-            }
+            statechart.enterFn(state);
             statechart.isActive[state.name] = true;
             safeCallback(statechart, state.enterFn, state);
         });
@@ -222,6 +218,24 @@
                 return (leaves.length == 0) ? [
                     this.root
                 ] : leaves;
+            },
+            enterFn: function (state) {
+                if(DEBUG) {
+                    console.log("entering " + state.name);
+                }
+            },
+            enter: function (fn) {
+                this.enterFn = fn;
+                return this;
+            },
+            exitFn: function (state) {
+                if(DEBUG) {
+                    console.log("exiting: " + state.name + " history of " + state.parentState.name);
+                }
+            },
+            exit: function (fn) {
+                this.exitFn = fn;
+                return this;
             }
         };
         root.statechart = chart;

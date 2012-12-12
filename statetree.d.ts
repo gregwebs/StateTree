@@ -10,6 +10,10 @@ interface StateChart {
   handleError: Function;
   defaultToHistory: Boolean;
   defaultToHistoryState();
+  enterFn(state:State):undefined;
+  enter(fn:(State) => undefined):undefined;
+  exitFn(state:State):undefined;
+  exit(fn:(State) => undefined):undefined;
 }
 
 interface StateCallback {

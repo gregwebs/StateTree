@@ -66,9 +66,11 @@ TypeScript
 
 # Usage
 
+Setup a state chart with `enter` and `exit` callbacks for different transitions.
 Changing the state is done with `state.goTo()`
 You do not indicate what the originating state is.
-The state tree 
+The state tree:
+
  * determines which concurrent substate the new state is in and moves within that concurrent substate
  * moves up the tree as necessary, exiting (invoke exit callback for) each state and setting history states.
  * moves down the tree and enters (invoke enter callback for) each state
@@ -131,6 +133,11 @@ History states let us know the previous substate so we can easily restore previo
 ## Dynamic state lookup
 
     tree.stateFromName('loggedIn')
+
+
+## Running code for every transition
+
+Callbacks for all transitions can be registered with `tree.enter` and `tree.exit`
 
 
 ## Events
