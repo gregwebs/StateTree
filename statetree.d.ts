@@ -30,8 +30,8 @@ interface AnyState {
   subStatesAreConcurrent:Boolean;
   concurrentSubStates();
 
-  enterFn: Function;
-  exitFn: Function;
+  enterFns: Function[];
+  exitFns: Function[];
   enter(fn:Function):State;
   exit(fn:Function):State;
 

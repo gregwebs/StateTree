@@ -13,6 +13,8 @@ interface Window { makeStateTree():StateChart; }
     this.name = name
     this.childStates = []
     this.subStatesAreConcurrent = false
+    this.enterFns = []
+    this.exitFns = []
 
     if (parentState) {
       this.parentState = parentState
@@ -48,17 +50,12 @@ interface Window { makeStateTree():StateChart; }
     this.subStatesAreConcurrent = true
     return this
   }
-  var assertEmptyFn = (fn:Function, name:String) => {
-    if(fn) throw new Error(name + " function already defined")
-  }
   State.prototype.enter = function(fn:Function):State {
-    assertEmptyFn(this.enterFn, "enter")
-    this.enterFn = fn
+    this.enterFns.push(fn)
     return this
   }
   State.prototype.exit = function(fn:Function):State {
-    assertEmptyFn(this.exitFn, "exit")
-    this.exitFn = fn
+    this.exitFns.push(fn)
     return this
   }
   State.prototype.activeChildState = function():State {
@@ -79,7 +76,9 @@ interface Window { makeStateTree():StateChart; }
       state.statechart.isActive[state.name] = false
       if(state.parentState) state.parentState.history = state
       state.statechart.exitFn(state)
-      safeCallback(state.statechart, state.exitFn, state)
+      lodash.each(state.exitFns, (exitFn) => {
+        safeCallback(state.statechart, exitFn, state)
+      })
     })
   }
 
@@ -174,7 +173,9 @@ interface Window { makeStateTree():StateChart; }
     _.each(entered, (state:State) => {
       statechart.enterFn(state)
       statechart.isActive[state.name] = true
-      safeCallback(statechart, state.enterFn, state)
+      lodash.each(state.enterFns, (enterFn) => {
+        safeCallback(statechart, enterFn, state)
+      })
     })
 
     if (DEBUG) {

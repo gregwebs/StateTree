@@ -4,6 +4,8 @@
         this.name = name;
         this.childStates = [];
         this.subStatesAreConcurrent = false;
+        this.enterFns = [];
+        this.exitFns = [];
         if(parentState) {
             this.parentState = parentState;
             parentState.childStates.push(this);
@@ -45,19 +47,12 @@
         this.subStatesAreConcurrent = true;
         return this;
     };
-    var assertEmptyFn = function (fn, name) {
-        if(fn) {
-            throw new Error(name + " function already defined");
-        }
-    };
     State.prototype.enter = function (fn) {
-        assertEmptyFn(this.enterFn, "enter");
-        this.enterFn = fn;
+        this.enterFns.push(fn);
         return this;
     };
     State.prototype.exit = function (fn) {
-        assertEmptyFn(this.exitFn, "exit");
-        this.exitFn = fn;
+        this.exitFns.push(fn);
         return this;
     };
     State.prototype.activeChildState = function () {
@@ -87,7 +82,9 @@
                 state.parentState.history = state;
             }
             state.statechart.exitFn(state);
-            safeCallback(state.statechart, state.exitFn, state);
+            lodash.each(state.exitFns, function (exitFn) {
+                safeCallback(state.statechart, exitFn, state);
+            });
         });
     };
     var iterateActive = function (tree, cb) {
@@ -157,7 +154,9 @@
         _.each(entered, function (state) {
             statechart.enterFn(state);
             statechart.isActive[state.name] = true;
-            safeCallback(statechart, state.enterFn, state);
+            lodash.each(state.enterFns, function (enterFn) {
+                safeCallback(statechart, enterFn, state);
+            });
         });
         if(DEBUG) {
             if(statechart.currentStates().indexOf(expected) == -1) {
@@ -256,3 +255,4 @@
         });
     }
 }).call(this, lodash);
+//@ sourceMappingURL=statetree.js.map
