@@ -32,7 +32,7 @@
         return this;
     };
     State.prototype.defaultTo = function (state) {
-        if(this.defaultSubState) {
+        if(this.subStatesAreConcurrent) {
             errorDefaultAndConcurrent(state);
         }
         return this.changeDefaultTo(state);

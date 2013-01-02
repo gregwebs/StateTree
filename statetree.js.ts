@@ -39,7 +39,7 @@ interface Window { makeStateTree():StateChart; }
     return this
   }
   State.prototype.defaultTo = function(state:State):State {
-    if (this.defaultSubState) errorDefaultAndConcurrent(state)
+    if (this.subStatesAreConcurrent) errorDefaultAndConcurrent(state)
     return this.changeDefaultTo(state)
   }
   var errorDefaultAndConcurrent = (state:State):undefined => {
