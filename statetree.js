@@ -28,12 +28,15 @@
         return this;
     };
     State.prototype.changeDefaultTo = function (state) {
+        if(this.subStatesAreConcurrent) {
+            errorDefaultAndConcurrent(state);
+        }
         this.defaultSubState = state;
         return this;
     };
     State.prototype.defaultTo = function (state) {
-        if(this.subStatesAreConcurrent) {
-            errorDefaultAndConcurrent(state);
+        if(this.defaultSubState) {
+            throw new Error("default sub state '" + this.defaultSubState.name + "' already exists. Will not change it to '" + state.name + "'. To dynamically change default states use '.changeDefaultTo'");
         }
         return this.changeDefaultTo(state);
     };
