@@ -1,5 +1,5 @@
 /// <reference path="./statetree.d.ts" />
-declare var lodash // remove lodash dependency?
+declare var lodash
 
 // for exports
 declare var ender
