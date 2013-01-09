@@ -193,6 +193,28 @@ Then your own state service for your own application.
 
 Now you can use this service in your controller
 
-    .controller('ShowPopupController', ['$scope', 'statechart', function(){
-      $scope.closePopup = function() { statechart.closed.goTo() }
+    .controller('PopupController', ['$scope', 'appState', function(){
+      $scope.closePopup = function() { appState.closed.goTo() }
     }]
+
+
+## Integrated with routing
+
+There are already a lot of routing libraries out there, so I want to take the approach of writing adapters.
+
+There is an AngularJS adapter available.
+See the comments at the top of the file on how to set it up and also the API.
+Here is some usage:
+
+    var mkRoute = routeGenerator(routeProvider, $location)
+
+    showPopupState.subState("open-data-detail", function(openDataDetail) {
+        var setDataId = (dataId) => dataViewer.setDataId(showId)
+        var getDataId = () => [showViewer.getShowId()]
+        mkRoute(openDataDetail, ['data', Number], getDataId, setDataId)
+    })
+
+`dataViewer` is a service that retrieves data from a service and returns a promise.
+This links the state with a url `/data/:dataId`.
+If the user navigates to the url, the state will be entered after waiting for the promise from the `setDataId` function.
+If the state is entered programatically, it will use the `getDataId` function to change the url.
