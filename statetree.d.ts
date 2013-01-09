@@ -39,7 +39,7 @@ interface AnyState {
   defaultTo(state:State):State;
   changeDefaultTo(state:State):State;
 
-  goTo():AnyState;
+  goTo(data?:any):AnyState;
   defaultState();
   activeSubState():State;
 }

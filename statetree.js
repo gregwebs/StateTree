@@ -117,7 +117,8 @@
         }
         return currentState;
     };
-    State.prototype.goTo = function () {
+    State.prototype.goTo = function (data) {
+        var _this = this;
         if(inGoTo.length > 0) {
             inGoTo.push(this);
             return;
@@ -157,8 +158,9 @@
         _.each(entered, function (state) {
             statechart.enterFn(state);
             statechart.isActive[state.name] = true;
+            var dataParam = _this.name == state.name ? data : undefined;
             lodash.each(state.enterFns, function (enterFn) {
-                safeCallback(statechart, enterFn, state);
+                safeCallback(statechart, enterFn, state, dataParam);
             });
         });
         if(DEBUG) {

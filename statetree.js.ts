@@ -125,10 +125,14 @@ interface Window { makeStateTree():StateChart; }
   // start from the state we want to go to and find an active branch
   // Exit the other tree of the branch and enter the states we moved through to find the branch
   //
-  // during goTo() all the enter/exit functions combined can goTo one other state
-  // or an exception will be thrown
-  // In general only one top-level state should goTo another
-  State.prototype.goTo = function():AnyState {
+  // goTo during an enter/exit callback should generally be avoided
+  // during goTo() all the enter/exit functions combined can only goTo one other state
+  // otherwise an exception will be thrown
+  //
+  // goTo takes an optional data parameter that will be passed
+  // to the enter callback, but only for this goTo state.
+  // Other states entered will not have their enter callback receive the data
+  State.prototype.goTo = function(data?:any):AnyState {
     if (inGoTo.length > 0) {
       inGoTo.push(this)
       return
@@ -178,8 +182,9 @@ interface Window { makeStateTree():StateChart; }
     _.each(entered, (state:State) => {
       statechart.enterFn(state)
       statechart.isActive[state.name] = true
+      var dataParam = this.name == state.name ? data : undefined
       lodash.each(state.enterFns, (enterFn) => {
-        safeCallback(statechart, enterFn, state)
+        safeCallback(statechart, enterFn, state, dataParam)
       })
     })
 
