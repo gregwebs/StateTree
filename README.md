@@ -123,16 +123,20 @@ authenticate.goTo()
 
 History states let us know the previous substate so we can easily restore previous application state.
 
+~~~~~~~~~~~~~~ {.js}
     // access the previous sub-state
     state.history
 
     // if there is a history state always go to it instead of the default state
     tree.defaultToHistoryState()
+~~~~~~~~~~~~~~
 
 
 ## Dynamic state lookup
 
+~~~~~~~~~~~~~~ {.js}
     tree.stateFromName('loggedIn')
+~~~~~~~~~~~~~~
 
 
 ## Running code for every transition
@@ -163,10 +167,12 @@ If you want to limit access, just export a new object rather than all of the sta
 Instead of exporting states, you can export functions.
 These can handle data and limit usage to only valid state transitions.
 
+~~~~~~~~~~~~~~ {.js}
      return {
        goToStateA: goToStateA
      , stateB: stateB // public
      }
+~~~~~~~~~~~~~~
 
 
 ## Flexible state lookup
@@ -181,21 +187,27 @@ First make sure to require the statetree.js file.
 
 You may want to make this library a module value
 
+~~~~~~~~~~~~~~ {.js}
     angular.module('StateTree', []).value('statetree', window.makeStateTree)
+~~~~~~~~~~~~~~
 
 Then your own state service for your own application.
 
+~~~~~~~~~~~~~~ {.js}
     angular.module('myApp', ['StateTree'])
     .factory('appState', ['statetree', function(statetree){
       // code from examples above goes here
     }])
+~~~~~~~~~~~~~~
 
 
 Now you can use this service in your controller
 
+~~~~~~~~~~~~~~ {.js}
     .controller('PopupController', ['$scope', 'appState', function(){
       $scope.closePopup = function() { appState.closed.goTo() }
     }]
+~~~~~~~~~~~~~~
 
 
 ## Integrated with routing
@@ -206,6 +218,7 @@ There is an AngularJS adapter available.
 See the comments at the top of the file on how to set it up and also the API.
 Here is some usage:
 
+~~~~~~~~~~~~~~ {.js}
     var mkRoute = routeGenerator(routeProvider, $location)
 
     showPopupState.subState("open-data-detail", function(openDataDetail) {
@@ -213,6 +226,7 @@ Here is some usage:
         var getDataId = () => [showViewer.getShowId()]
         mkRoute(openDataDetail, ['data', Number], getDataId, setDataId)
     })
+~~~~~~~~~~~~~~
 
 `dataViewer` is a service that retrieves data from a service and returns a promise.
 This links the state with a url `/data/:dataId`.
