@@ -212,9 +212,11 @@ Now you can use this service in your controller
 
 ## Integrated with routing
 
-There are already a lot of routing libraries out there, so I want to take the approach of writing adapters.
+There are already a lot of routing libraries out there, so right now I want to take the approach of writing adapters.
 
-There is an AngularJS adapter available.
+There is an [AngularJS adapter available](
+https://github.com/yaptv/StateTree/blob/master/statetree.routes.angular.js.ts
+).
 See the comments at the top of the file on how to set it up and also the API.
 Here is some usage:
 
