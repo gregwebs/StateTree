@@ -10,6 +10,9 @@
             this.parentState = parentState;
             parentState.childStates.push(this);
             this.statechart = parentState.statechart;
+            if(this.statechart.statesByName[name]) {
+                throw new Error("state already exists: " + name);
+            }
             this.statechart.statesByName[name] = this;
         }
     };
@@ -56,6 +59,19 @@
     };
     State.prototype.exit = function (fn) {
         this.exitFns.push(fn);
+        return this;
+    };
+    State.prototype.onlyEnterThrough = function () {
+        var states = [];
+        for (var _i = 0; _i < (arguments.length - 0); _i++) {
+            states[_i] = arguments[_i + 0];
+        }
+        if(this.allowedFrom) {
+            throw new Error("allowed states are already set");
+        }
+        this.allowedFrom = _.map(states, function (state) {
+            return state.name;
+        });
         return this;
     };
     State.prototype.activeChildState = function () {
@@ -154,6 +170,14 @@
         } else {
             throw new Error("impossible!");
         }
+        _.each(entered, function (state) {
+            if(!state.allowedFrom || state.allowedFrom.length === 0) {
+                return;
+            }
+            if((state.allowedFrom.indexOf(_this.name) === -1) && (state.name !== _this.name)) {
+                throw new Error("cannot transition to state '" + state.name + "' from '" + _this.name + "'. Allowed states: " + state.allowedFrom.join(", "));
+            }
+        });
         exitStates(exited);
         _.each(entered, function (state) {
             statechart.enterFn(state);

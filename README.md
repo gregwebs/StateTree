@@ -34,7 +34,10 @@ Our statechart is modeled as a tree (hierarchy) with multiple active branches (c
 There are no library features for the broadcast communication aspect of statecharts.
 
 StateTree was developed for managing the state of a typical client-side UI where the user is able to navigate around the entire UI.
-There are few illegal state transitions in such a scenario, so this library provides no tools to restrict state transitions, although you can achieve this to a certain extent by making states private.
+There are few illegal state transitions in such a scenario.
+Rather than have the user wire an event for every transition, you simply goto the state you would like with state.goTo()
+There is one function to restrict state transitions: `onlyEnterThrough`.
+You can also restrict transitions by only exporting certain states or functions that change states and making other states private.
 
 As a result, StateTree is smaller and simpler than any other statechart library I have found.
 You may find its features to be lacking.
@@ -82,25 +85,42 @@ The state tree:
 // login service
 function login(){ return {onApplicationStart:function(cb){setTimeout(cb)}} }
 
-var tree = makeStateTree()
-var authenticate = tree.root.subState("authenticate")
+var authenticate = makeStateTree().root.subState("authenticate")
  .enter(function(){ login.onApplicationStart(function(){ loggedin.goTo()}})
+
+// state references to export
+var tab2 = null
+var openPopup = null
 
 var loggedin = authenticate.subState("loggedin", function(loggedin){
   loggedin.concurrentSubStates()
-  .enter(function(){ main.goTo()})
 
-  loggedin.subState("main", function(main){
-    main.subState('tab1')
+  // can't enter loggedin by calling main.goTo(),
+  // must be loggedin.goTo() while in authenticate
+  .onlyEnterThrough(authenticate)
+
+  // You might be tempted to write something like:
+  //
+  //   .enter(function(){ main.goTo() })
+  //
+  // But generally avoid goTo in an enter/exit callback.
+  // Just 1 is allowed during all transitions
+  // for this case we can use defaultSubState to automatically enter "main"
+
+  .subState("main", function(main){
+    main.defaultSubState()
+    .subState('tab1')
+      // defaultSubState will choose betweent tab1 & tab2 when we call main.goTo()
       .defaultSubState()
       .enter(function(){ UI.activateTab('tab1')})
      
-    main.subState('tab2')
+    tab2 = main.subState('tab2')
      .enter(function(){ UI.activateTab('tab2')})
   }) 
   
   loggedin.subState("popup", function(popup){
-    popup.subState("open")
+    openPopup = popup.subState("open")
+      .enter(function() { popupService.popup() })
     
     popup.subState("closed")
       .enter(function(){ UI.unmask() })
@@ -109,6 +129,11 @@ var loggedin = authenticate.subState("loggedin", function(loggedin){
 
 // start up the application
 authenticate.goTo()
+// user clicks a tab
+tab2.goTo()
+// popup a dialog
+openPopup.goTo()
+
 ~~~~~~~~~~~~~~
 
 
@@ -163,14 +188,19 @@ If you want to send data with a transition, just create a wrapper function (and 
 
 ## Limiting/Enforcing transitions
 
+This library provides one function: `onlyEnterThrough`. See usage in the main example.
+
 If you want to limit access, just export a new object rather than all of the states.
 Instead of exporting states, you can export functions.
 These can handle data and limit usage to only valid state transitions.
 
 ~~~~~~~~~~~~~~ {.js}
+     // statechart definition from the main example above of using statechart ...
+
+     // don't export authenticate or loggedin, those need to be locked down
      return {
-       goToStateA: goToStateA
-     , stateB: stateB // public
+       goToTab2: function(){ tab2.goTo() } // private, but easy to use
+     , openPopup: openPopup // public
      }
 ~~~~~~~~~~~~~~
 

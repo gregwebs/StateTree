@@ -1,23 +1,27 @@
 interface Window { angular: any; }
 
 interface StateChart {
-  root: RootState;
-  currentStates():AnyState[];
-  activeStates(): AnyState[];
-  isActive: {[name:string]: Boolean;};
-  statesByName: {[name:string]: AnyState;};
-  stateFromName(name:string): AnyState;
-  handleError: Function;
-  defaultToHistory: Boolean;
+  root            : RootState;
+
+  currentStates() : AnyState[];
+  activeStates()  : AnyState[];
+  isActive        : {[name: string]: Boolean;};
+  statesByName    : {[name: string]: AnyState;};
+  stateFromName(name: string): AnyState;
+
+  handleError      : Function;
+
+  defaultToHistory : Boolean;
   defaultToHistoryState();
-  enterFn(state:State):undefined;
-  enter(fn:(State) => undefined):undefined;
-  exitFn(state:State):undefined;
-  exit(fn:(State) => undefined):undefined;
+
+  enterFn(state: State)      : void;
+  exitFn( state: State)      : void;
+  enter(fn: (State) => void) : void;
+  exit( fn: (State) => void) : void;
 }
 
 interface StateCallback {
-  (state:State): undefined;
+  (state:State): void;
 }
 
 interface AnyState {
@@ -42,6 +46,9 @@ interface AnyState {
   goTo(data?:any):AnyState;
   defaultState();
   activeSubState():State;
+
+  onlyEnterThrough(...states: State[]);
+  allowedFrom?: State[];
 }
 
 interface State extends AnyState {

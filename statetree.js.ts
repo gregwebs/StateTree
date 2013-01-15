@@ -20,26 +20,32 @@ interface Window { makeStateTree():StateChart; }
       this.parentState = parentState
       parentState.childStates.push(this)
       this.statechart = parentState.statechart
+      if (this.statechart.statesByName[name]) {
+        throw new Error("state already exists: " + name)
+      }
       this.statechart.statesByName[name] = this
     }
   }
 
-  State.prototype.subState = function(name:string, nestingFn?: StateCallback):State {
+  State.prototype.subState = function(name: string, nestingFn?: StateCallback): State {
     var state = new State(name, this)
     if (nestingFn) nestingFn(state)
     return state
   }
-  State.prototype.defaultState = function():State {
+
+  State.prototype.defaultState = function(): State {
     if(!this.parentState) throw new Error("cannot default root state")
     this.parentState.defaultTo(this)
     return this
   }
-  State.prototype.changeDefaultTo = function(state:State):State {
+
+  State.prototype.changeDefaultTo = function(state: State): State {
     if (this.subStatesAreConcurrent) errorDefaultAndConcurrent(state)
     this.defaultSubState = state
     return this
   }
-  State.prototype.defaultTo = function(state:State):State {
+
+  State.prototype.defaultTo = function(state: State): State {
     if (this.defaultSubState) { throw new Error("default sub state '" +
       this.defaultSubState.name + "' already exists. Will not change it to '" +
       state.name +
@@ -47,28 +53,40 @@ interface Window { makeStateTree():StateChart; }
     }
     return this.changeDefaultTo(state)
   }
-  var errorDefaultAndConcurrent = (state:State):undefined => {
+
+  var errorDefaultAndConcurrent = (state: State): void => {
     throw new Error("cannot have a default sub state among concurrent states")
   }
+
   State.prototype.concurrentSubStates = function():State {
     if (this.defaultSubState) errorDefaultAndConcurrent(this.defaultSubState)
     this.subStatesAreConcurrent = true
     return this
   }
-  State.prototype.enter = function(fn:Function):State {
+
+  State.prototype.enter = function(fn: Function):State {
     this.enterFns.push(fn)
     return this
   }
-  State.prototype.exit = function(fn:Function):State {
+
+  State.prototype.exit = function(fn: Function):State {
     this.exitFns.push(fn)
     return this
   }
+
+  State.prototype.onlyEnterThrough = function(...states: State[]):State {
+    if (this.allowedFrom) { throw new Error("allowed states are already set") }
+    this.allowedFrom = _.map(states, (state) => state.name)
+    return this
+  }
+
   State.prototype.activeChildState = function():State {
     return _.find(this.childStates, (state) => this.statechart.isActive[state.name])
   }
 
+
   // TODO: configurable for error reporting
-  var safeCallback = (statechart:StateChart, cb:Function, ...args:any[]):undefined => {
+  var safeCallback = (statechart: StateChart, cb: Function, ...args: any[]):undefined => {
     if (!cb) return undefined
     try { cb.apply(undefined, args) }
     catch(e) { 
@@ -146,7 +164,7 @@ interface Window { makeStateTree():StateChart; }
 
     if (alreadyActive.name === this.name) {
       return handlePendingGoTo(this)
-      // TODO: throw new Error("already in states: " + this.name)
+      // throw new Error("already in state: " + this.name)
     }
 
     if (!alreadyActive.subStatesAreConcurrent) {
@@ -177,6 +195,19 @@ interface Window { makeStateTree():StateChart; }
       }
     } else throw new Error("impossible!")
 
+    // check to see if any state transitions are restricted
+    _.each(entered, (state: State) => {
+      if (!state.allowedFrom || state.allowedFrom.length === 0) return
+
+      // My use case was only looking at the state that goTo is called on
+      if ((state.allowedFrom.indexOf(this.name) === -1) && (state.name !== this.name)) {
+        throw new Error("cannot transition to state '" + state.name +
+          "' from '" + this.name + "'. Allowed states: " +
+          state.allowedFrom.join(", ")
+        )
+      }
+    })
+
     exitStates(exited)
 
     _.each(entered, (state:State) => {
@@ -189,7 +220,9 @@ interface Window { makeStateTree():StateChart; }
     })
 
     if (DEBUG) {
-      if (statechart.currentStates().indexOf(expected) == -1) { throw new Error("expected to go to state " + this.name + ", but now in states " + _(statechart.currentStates()).pluck('name').join(",")) }
+      if (statechart.currentStates().indexOf(expected) == -1) {
+        throw new Error("expected to go to state " + this.name + ", but now in states " + _(statechart.currentStates()).pluck('name').join(","))
+      }
     }
 
     return handlePendingGoTo(this)
