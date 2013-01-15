@@ -39,13 +39,23 @@ Rather than have the user wire an event for every transition, you simply goto th
 There is one function to restrict state transitions: `onlyEnterThrough`.
 You can also restrict transitions by only exporting certain states or functions that change states and making other states private.
 
-As a result, StateTree is smaller and simpler than any other statechart library I have found.
+As a result, StateTree is smaller and simpler to use than most alternatives.
 You may find its features to be lacking.
 However, switching to using a more featureful statechart library should be straightforward because StateTree should be a subset.
 
 * Stativus is a fully-featured statechart library.
 * If you are using Ember, they have their own statechart library.
-* here is a GPL statechart library that has not been updated in a while: https://github.com/DavidDurman/statechart
+* here is a smaller GPL statechart library that has not been updated in a while: https://github.com/DavidDurman/statechart/blob/master/test/samek.js
+
+StateTree is MIT licensed, and does not require any frameworks (but does currently have a lodash/underscore dependency).
+
+I have reviewed other libraries, but Stativus is the only one I have used.
+Stativus requires you to define state transtition events, which is required for certain use cases, but burdensome for mine.
+I ran into buggy or undefined behavior with Stativus where no error was thrown, but things just didn't work in the way I thought they would, and I had great difficulty tracking the issue down in the source code and decided it would be better just to roll my own solution.
+In contrast, StateTree is designed to check for error conditions whenever possible and immediately throw an exception.
+If you use TypeScript, the goal is for there to be no way to use the library that leads to undefined behavior.
+Otherwise you can probably still run into issues if you call functions using incorrect types.
+
 
 
 ## Safety and TypeScript
