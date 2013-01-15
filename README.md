@@ -267,6 +267,7 @@ If the state is entered programatically, it will use the `getDataId` function to
 
 
 Routing now becomes a way to move around the statchart, so think carefully.
+`onlyEnterThrough` will stop transitions in their tracks, but we may instead want to wait until the transition is valid.
 For example, if the user must first log in, one way of dealing with that is to create a promise for the loggedin state.
 
 ~~~~~~~~~~~~~~ {.js}
