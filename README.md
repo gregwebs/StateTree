@@ -149,18 +149,18 @@ openPopup.goTo()
 History states let us know the previous substate so we can easily restore previous application state.
 
 ~~~~~~~~~~~~~~ {.js}
-    // access the previous sub-state
-    state.history
+// access the previous sub-state
+state.history
 
-    // if there is a history state always go to it instead of the default state
-    tree.defaultToHistoryState()
+// if there is a history state always go to it instead of the default state
+tree.defaultToHistoryState()
 ~~~~~~~~~~~~~~
 
 
 ## Dynamic state lookup
 
 ~~~~~~~~~~~~~~ {.js}
-    tree.stateFromName('loggedIn')
+tree.stateFromName('loggedIn')
 ~~~~~~~~~~~~~~
 
 
@@ -175,14 +175,14 @@ There is no event sytem.
 If you want to send data with a transition, just create a wrapper function (and tie it to an event if you want).
 
 ~~~~~~~~~~~~~~ {.js}
-     // wrapper function
-     function goToStateA(arg1) {
-       // do something with arg1
-       stateA.goTo()
-     } 
+ // wrapper function
+ function goToStateA(arg1) {
+   // do something with arg1
+   stateA.goTo()
+ } 
 
-     // event hook: use your own event system
-     myEventSystem.on('stateAEvent', goToStateA)
+ // event hook: use your own event system
+ myEventSystem.on('stateAEvent', goToStateA)
 ~~~~~~~~~~~~~~
 
 
@@ -195,13 +195,13 @@ Instead of exporting states, you can export functions.
 These can handle data and limit usage to only valid state transitions.
 
 ~~~~~~~~~~~~~~ {.js}
-     // statechart definition from the main example above of using statechart ...
+ // statechart definition from the main example above of using statechart ...
 
-     // don't export authenticate or loggedin, those need to be locked down
-     return {
-       goToTab2: function(){ tab2.goTo() } // private, but easy to use
-     , openPopup: openPopup // public
-     }
+ // don't export authenticate or loggedin, those need to be locked down
+ return {
+   goToTab2: function(){ tab2.goTo() } // private, but easy to use
+ , openPopup: openPopup // public
+ }
 ~~~~~~~~~~~~~~
 
 
@@ -218,25 +218,25 @@ First make sure to require the statetree.js file.
 You may want to make this library a module value
 
 ~~~~~~~~~~~~~~ {.js}
-    angular.module('StateTree', []).value('statetree', window.makeStateTree)
+angular.module('StateTree', []).value('statetree', window.makeStateTree)
 ~~~~~~~~~~~~~~
 
 Then your own state service for your own application.
 
 ~~~~~~~~~~~~~~ {.js}
-    angular.module('myApp', ['StateTree'])
-    .factory('appState', ['statetree', function(statetree){
-      // code from examples above goes here
-    }])
+angular.module('myApp', ['StateTree'])
+.factory('appState', ['statetree', function(statetree){
+  // code from examples above goes here
+}])
 ~~~~~~~~~~~~~~
 
 
 Now you can use this service in your controller
 
 ~~~~~~~~~~~~~~ {.js}
-    .controller('PopupController', ['$scope', 'appState', function(){
-      $scope.closePopup = function() { appState.closed.goTo() }
-    }]
+.controller('PopupController', ['$scope', 'appState', function(){
+  $scope.closePopup = function() { appState.closed.goTo() }
+}]
 ~~~~~~~~~~~~~~
 
 
@@ -251,16 +251,29 @@ See the comments at the top of the file on how to set it up and also the API.
 Here is some usage:
 
 ~~~~~~~~~~~~~~ {.js}
-    var mkRoute = routeGenerator(routeProvider, $location)
+var mkRoute = routeGenerator(routeProvider, $location)
 
-    showPopupState.subState("open-data-detail", function(openDataDetail) {
-        var setDataId = (dataId) => dataViewer.setDataId(showId)
-        var getDataId = () => [showViewer.getShowId()]
-        mkRoute(openDataDetail, ['data', Number], getDataId, setDataId)
-    })
+showPopupState.subState("open-data-detail", function(openDataDetail) {
+    var setDataId = (dataId) => dataViewer.setDataId(showId)
+    var getDataId = () => [showViewer.getShowId()]
+    mkRoute(openDataDetail, ['data', Number], getDataId, setDataId)
+})
 ~~~~~~~~~~~~~~
 
 `dataViewer` is a service that retrieves data from a service and returns a promise.
 This links the state with a url `/data/:dataId`.
 If the user navigates to the url, the state will be entered after waiting for the promise from the `setDataId` function.
 If the state is entered programatically, it will use the `getDataId` function to change the url.
+
+
+Routing now becomes a way to move around the statchart, so think carefully.
+For example, if the user must first log in, one way of dealing with that is to create a promise for the loggedin state.
+
+~~~~~~~~~~~~~~ {.js}
+var loginDefer = $q.defer()
+loggedin.enter(() => { loginDefer.resolve() })
+
+// change the definition of setDataId to require the loggedin state
+var setDataId = (dataId) => $q.all([loginDefer.promise, dataViewer.setDataId(dataId)])
+~~~~~~~~~~~~~~
+
