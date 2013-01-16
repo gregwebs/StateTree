@@ -9,12 +9,15 @@ A statechart is similar to a FSM (finite state machine), but extends the concept
 
 ## Why statecharts?
 
+An application needs to determine how it should respond to user interaction based on the current state of the application.
 Most applications have a lot of implicit and ad-hoc state mutation that is difficult to understand and leads to bugs.
-In a simple app it is easy enough to manage by paying attention to detail.
+In a simple app it is easy enough to manage by reducing state and paying attention to detail.
 However, as applications become complex this gives every new feature the potential to break existing features.
-Statecharts were originally created to wrangle the complexity of jet fighter software, but I think they can scale down nicely also.
+Statecharts were originally created to wrangle the complexity of jet fighter software, but I think they can scale down nicely to even simple applications.
 Rather than having implicit state mutation, Statecharts allow us to be very explicit about state and how it can be changed.
-This leads to fewer defects and even lets us explain how our application operates to non-programmers.
+This leads to fewer defects, lets us reason about how our application operates, and even explain it to non-programmers.
+
+Every feature in this library was created to satisfy a need in an [application](https://apps.facebook.com/yaptvguide/).
 
 ## Why not FSMs?
 
