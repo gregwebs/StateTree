@@ -40,24 +40,24 @@ StateTree was developed for managing the state of a typical client-side UI where
 There are few illegal state transitions in such a scenario.
 Rather than have the user wire an event for every transition, you simply goto the state you would like with state.goTo()
 There is one function to restrict state transitions: `onlyEnterThrough`.
-You can also restrict transitions by only exporting certain states or functions that change states and making other states private.
 
 As a result, StateTree is smaller and simpler to use than most alternatives.
 You may find its features to be lacking.
 However, switching to using a more featureful statechart library should be straightforward because StateTree should be a subset.
 
 * Stativus is a fully-featured statechart library.
-* If you are using Ember, they have their own statechart library.
-* here is a smaller GPL statechart library that has not been updated in a while: https://github.com/DavidDurman/statechart/blob/master/test/samek.js
+* If you are using Sproutcore or Ember, they have their own statechart library with a dependency on the frameworks.
+* [statechart](https://github.com/DavidDurman/statechart), a fully-featured statechart library.
 
-StateTree is MIT licensed, and does not require any frameworks (but does currently have a lodash/underscore dependency).
+I passed the latter statechart library over because it was originally in somewhat of an abandoned state. It was undocumented and GPL licensed, but it has since been switched to an MIT license and documentation has been added.
+
+StateTree is MIT licensed and does not require any frameworks (but does currently have a lodash/underscore dependency).
 
 I have reviewed other libraries, but Stativus is the only one I have used.
 Stativus requires you to define state transtition events, which is required for certain use cases, but burdensome for mine.
 I ran into buggy or undefined behavior with Stativus where no error was thrown, but things just didn't work in the way I thought they would, and I had great difficulty tracking the issue down in the source code and decided it would be better just to roll my own solution.
 In contrast, StateTree is designed to check for error conditions whenever possible and immediately throw an exception.
-If you use TypeScript, the goal is for there to be no way to use the library that leads to undefined behavior.
-Otherwise you can probably still run into issues if you call functions using incorrect types.
+If you use TypeScript (or always call the library functions using the correct types), the goal is for there to be no way to use the library that leads to undefined behavior.
 
 
 
@@ -67,7 +67,7 @@ Most other statechart libraries ask you to give a large JSON structure to descri
 JSON hierarchy looks nice, but these structures normally rely on strings that are a typo away from silent error.
 StateTree instead uses setter methods because they will always fail immediately at runtime if mistyped.
 StateTree leverages TypeScript to reduce bugs in the implementation.
-You can also use TypeScript in your usage of this library to move some errors from runtime to compile time and also to get better autocompletion.
+You can also use TypeScript in your usage of this library to move some errors from runtime to compile time and also to have better autocompletion.
 
 
 # Dependencies
