@@ -13,9 +13,11 @@ interface RouteMaker {
 }
 interface Window { routeGenerator:(routeProvider:any, $location:any) => RouteMaker; }
 
+// dependencies: AngularJS routing and lodash/underscore for map, probably should write my own map function
+//
 // Uses AngularJS routing system which is not a great match for our needs
 // You must add an <ng-view> tag to your app for this to work, and going to a route specified here will fill it with an empty div
-// please note that it also wants the routeProvider: you can save that off to a variable and then pass it in.
+// please note that it also wants the routeProvider: you can save that off to a variable at config time and then pass it in.
 //
 // If you want the route to be removed on exit, just manually clear the location on exit
 //   state.exit(function(){ $location.path('/') })
@@ -48,11 +50,16 @@ interface Window { routeGenerator:(routeProvider:any, $location:any) => RouteMak
       routeProvider.when(routeStr, {
         template:'<div></div>'
       , controller: [<any>'$routeParams', ($routeParams) => {
-          var promise = set.apply(null, 
-            _.map(routeVars, (routeVar) => routeVar.transform($routeParams[routeVar.name]))
-          )
+          try {
+            var transformedVars = _.map(routeVars, (routeVar) => routeVar.transform($routeParams[routeVar.name]))
+          } catch (e) {
+            console.log("error parsing routes, redirecting to root")
+            console.log(e.toString())
+            $location.path('/')
+          }
+          var promise = set.apply(null, transformedVars)
           var goTo = () => { state.goTo({urlAlreadySet: true}) }
-          if (promise) { promise.then(goTo) } else { goTo() }
+          if (promise && promise.then) { promise.then(goTo) } else { goTo() }
         }]
       })
 

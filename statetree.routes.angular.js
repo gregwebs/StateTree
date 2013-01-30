@@ -28,15 +28,22 @@
                 controller: [
                     '$routeParams', 
                     function ($routeParams) {
-                        var promise = set.apply(null, _.map(routeVars, function (routeVar) {
-                            return routeVar.transform($routeParams[routeVar.name]);
-                        }));
+                        try  {
+                            var transformedVars = _.map(routeVars, function (routeVar) {
+                                return routeVar.transform($routeParams[routeVar.name]);
+                            });
+                        } catch (e) {
+                            console.log("error parsing routes, redirecting to root");
+                            console.log(e.toString());
+                            $location.path('/');
+                        }
+                        var promise = set.apply(null, transformedVars);
                         var goTo = function () {
                             state.goTo({
                                 urlAlreadySet: true
                             });
                         };
-                        if(promise) {
+                        if(promise && promise.then) {
                             promise.then(goTo);
                         } else {
                             goTo();
