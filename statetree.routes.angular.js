@@ -1,6 +1,13 @@
 (function (_, undefined) {
-    var routeGenerator = function (routeProvider, $location) {
-        return function (state, route, get, set) {
+    var routeGenerator = function (routeProvider, $location, $q, $rootScope, waitOn) {
+        return function (state, route, get, set, watch) {
+            if (typeof get === "undefined") { get = function () {
+                return [];
+            }; }
+            if (typeof set === "undefined") { set = function () {
+                return null;
+            }; }
+            if (typeof watch === "undefined") { watch = false; }
             var nParams = 0;
             var routeVars = [];
             var routeStr = '/' + _.map(route, function (piece, i) {
@@ -43,8 +50,12 @@
                                 urlAlreadySet: true
                             });
                         };
-                        if(promise && promise.then) {
-                            promise.then(goTo);
+                        var promises = _.compact([
+                            promise && promise.then && promise, 
+                            waitOn
+                        ]);
+                        if(promises.length > 0) {
+                            $q.all(promises).then(goTo);
                         } else {
                             goTo();
                         }
@@ -54,13 +65,20 @@
                 if(data && data.urlAlreadySet) {
                     return;
                 }
-                var paramValues = get();
-                if(!angular.isArray(paramValues)) {
-                    throw new Error("expected an array from route get function for: " + _state.name);
+                if(routeVars.length > 0) {
+                    var paramValues = get();
+                    if(!angular.isArray(paramValues)) {
+                        throw new Error("expected an array from route get function for: " + _state.name);
+                    }
+                    if(paramValues.length !== routeVars.length) {
+                        throw new Error("Expected get function to return " + routeVars.length + " values.");
+                    }
                 }
-                if(paramValues.length !== routeVars.length) {
-                    throw new Error("Expected get function to return " + routeVars.length + " values.");
+                if(!watch) {
+                    updateLocation(paramValues);
                 }
+            });
+            function updateLocation(paramValues) {
                 var routeVarsPosition = 0;
                 $location.path(_.map(route, function (piece, i) {
                     if(angular.isString(piece)) {
@@ -69,7 +87,17 @@
                     routeVarsPosition = routeVarsPosition + 1;
                     return paramValues[routeVarsPosition - 1];
                 }).join('/'));
-            });
+            }
+            if(watch) {
+                var deregister = null;
+                state.enter(function () {
+                    deregister = $rootScope.$watch(get, updateLocation);
+                }).exit(function () {
+                    if(deregister) {
+                        deregister();
+                    }
+                });
+            }
         }
     };
     if(typeof window !== "undefined") {
