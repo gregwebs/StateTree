@@ -261,10 +261,12 @@ There is an [AngularJS adapter available](
 https://github.com/yaptv/StateTree/blob/master/statetree.routes.angular.js.ts
 ).
 See the comments at the top of the file on how to set it up and also the API.
+This is all a work in progress, but it works well for me.
+
 Here is some usage:
 
 ~~~~~~~~~~~~~~ {.js}
-var mkRoute = routeGenerator(routeProvider, $location)
+var mkRoute = routeGenerator(routeProvider, $location, $q, $rootScope)
 
 showPopupState.subState("open-data-detail", function(openDataDetail) {
     var setDataId = (dataId) => dataViewer.setDataId(showId)
@@ -289,5 +291,14 @@ loggedin.enter(() => { loginDefer.resolve() })
 
 // change the definition of setDataId to require the loggedin state
 var setDataId = (dataId) => $q.all([loginDefer.promise, dataViewer.setDataId(dataId)])
+
+// or instead require every single route to wait for the login promise
+var mkRoute = routeGenerator(routeProvider, $location, $q, $rootScope, loginDefer.promise)
 ~~~~~~~~~~~~~~
+
+Another feature I added is watching for changes within a state by setting the watch flag to true for mkRoute.
+
+    mkRoute(openDataDetail, ['data', Number], getParameters, setParameter, true)
+
+Now getParameters will be called in the watch cycle and the url will be automatically updated when getParameters changes
 
