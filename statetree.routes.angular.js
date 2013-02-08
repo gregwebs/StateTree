@@ -91,7 +91,7 @@
             if(watch) {
                 var deregister = null;
                 state.enter(function () {
-                    deregister = $rootScope.$watch(get, updateLocation);
+                    deregister = $rootScope.$watch(get, updateLocation, true);
                 }).exit(function () {
                     if(deregister) {
                         deregister();

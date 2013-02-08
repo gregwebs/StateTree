@@ -22,6 +22,8 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
 // If you want the route to be removed on exit, just manually clear the location on exit
 //   state.exit(function(){ $location.path('/') })
 (function(_, undefined){
+  // var DEBUG = true
+
   var routeGenerator = (routeProvider:any, $location:ng.ILocationService, $q: ng.IQService, $rootScope: ng.IRootScopeService, waitOn?: ng.IHttpPromise) =>
     // The get and set parameterers are callbacks.
     // If the set callback should return nothing or a promise.
@@ -47,6 +49,8 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
           )
       }
 
+      // if (DEBUG) { console.log(routeStr) }
+
       routeProvider.when(routeStr, {
         template:'<div></div>'
       , controller: [<any>'$routeParams', ($routeParams) => {
@@ -59,7 +63,7 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
           }
           var promise = set.apply(null, transformedVars)
           var goTo = () => { 
-            // console.log('goto ' + routeStr)
+            // if (DEBUG) { console.log('goto ' + routeStr) }
             state.goTo({urlAlreadySet: true})
           }
           var promises = _.compact([promise && promise.then && promise, waitOn])
@@ -100,7 +104,7 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
         var deregister = null
         state
           .enter(() => {
-            deregister = $rootScope.$watch(get, updateLocation)
+            deregister = $rootScope.$watch(get, updateLocation, true)
         }).exit(() => {
             if (deregister) deregister()
         })
