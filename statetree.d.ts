@@ -49,6 +49,7 @@ interface AnyState {
 
   onlyEnterThrough(...states: State[]);
   allowedFrom?: State[];
+  activeChildState(): State;
 }
 
 interface State extends AnyState {
