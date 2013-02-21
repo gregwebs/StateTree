@@ -61,13 +61,17 @@ If you use TypeScript (or always call the library functions using the correct ty
 
 
 
-## Safety and TypeScript
+## Safety
 
 Most other statechart libraries ask you to give a large JSON structure to describe your state chart.
 JSON hierarchy looks nice, but these structures normally rely on strings that are a typo away from silent error.
-StateTree instead uses setter methods because they will always fail immediately at runtime if mistyped.
+StateTree instead uses setter methods (aka builder pattern similar to other libraries such as d3) because they will always fail immediately at runtime if mistyped. With Typescript they can fail at compile time.
+
+## Typescript
+
 StateTree leverages TypeScript to reduce bugs in the implementation.
-You can also use TypeScript in your usage of this library to move some errors from runtime to compile time and also to have better autocompletion.
+If you are a TypeScript user you can use the provided types to move some errors from runtime to compile time and also to have better autocompletion.
+If you are not a TypeScript user, just grap the js file.
 
 
 # Dependencies
