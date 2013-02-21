@@ -273,7 +273,7 @@
         return StateChart(new State("root"));
     };
     if(typeof window !== "undefined") {
-        window.makeStateTree = makeStateTree;
+        window['makeStateTree'] = makeStateTree;
     }
     if(typeof ender === 'undefined') {
         this['makeStateTree'] = makeStateTree;

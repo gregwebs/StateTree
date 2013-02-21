@@ -1,15 +1,73 @@
-/// <reference path="./statetree.d.ts" />
 declare var lodash
 
 // for exports
 declare var ender
 declare var define
 declare var module
-interface Window { makeStateTree():StateChart; }
+
+interface MakeStateTree { ():StateChart; }
+
+interface StateChart {
+  root            : RootState;
+
+  currentStates() : AnyState[];
+  activeStates()  : AnyState[];
+  isActive        : {[name: string]: Boolean;};
+  statesByName    : {[name: string]: AnyState;};
+  stateFromName(name: string): AnyState;
+
+  handleError      : Function;
+
+  defaultToHistory : Boolean;
+  defaultToHistoryState();
+
+  enterFn(state: State)      : void;
+  exitFn( state: State)      : void;
+  enter(fn: (State) => void) : void;
+  exit( fn: (State) => void) : void;
+}
+
+interface StateCallback {
+  (state: State): void;
+}
+
+interface AnyState {
+  name: string;
+  statechart: StateChart;
+  childStates: State[];
+  defaultSubState?: State;
+  history?: State;
+
+  subStatesAreConcurrent: bool;
+  concurrentSubStates();
+
+  enterFns: Function[];
+  exitFns: Function[];
+  enter(fn: Function): State;
+  exit(fn: Function): State;
+
+  subState(name: string, nestingFn?: StateCallback): State;
+  defaultTo(state:State): State;
+  changeDefaultTo(state: State): State;
+
+  goTo(data?:any): AnyState;
+  defaultState();
+  activeSubState(): State;
+
+  onlyEnterThrough(...states: State[]);
+  allowedFrom?: State[];
+  activeChildState(): State;
+}
+
+interface State extends AnyState {
+  parentState: State;
+}
+
+interface RootState extends AnyState { }
 
 (function(_, undefined){
   var DEBUG = true
-  var State = function(name:string, parentState?:AnyState):undefined {
+  var State = function(name: string, parentState?: AnyState): undefined {
     this.name = name
     this.childStates = []
     this.subStatesAreConcurrent = false
@@ -58,7 +116,7 @@ interface Window { makeStateTree():StateChart; }
     throw new Error("cannot have a default sub state among concurrent states")
   }
 
-  State.prototype.concurrentSubStates = function():State {
+  State.prototype.concurrentSubStates = function(): State {
     if (this.defaultSubState) errorDefaultAndConcurrent(this.defaultSubState)
     this.subStatesAreConcurrent = true
     return this
@@ -293,7 +351,7 @@ interface Window { makeStateTree():StateChart; }
 
   // module is a reserved word in TypeScript, guess I need to use their module thing
   // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }
-  if(typeof window !== "undefined") { window.makeStateTree = makeStateTree; }
+  if(typeof window !== "undefined") { window['makeStateTree'] = makeStateTree; }
   if (typeof ender === 'undefined') { this['makeStateTree'] = makeStateTree; }
   if (typeof define === "function" && define.amd) { define("makeStateTree", [], function () { return makeStateTree; }); }
 }).call(this, lodash)
