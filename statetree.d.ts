@@ -19,11 +19,18 @@ interface StateChart {
     exitFn(state: State): void;
     enter(fn: (State: any) => void): void;
     exit(fn: (State: any) => void): void;
+    intersect(...states: State[]): StateIntersection;
+}
+interface HasStateCallbacks {
+    enter(fn: Function): State;
+    exit(fn: Function): State;
+}
+interface StateIntersection extends HasStateCallbacks {
 }
 interface StateCallback {
     (state: State): void;
 }
-interface AnyState {
+interface AnyState extends HasStateCallbacks {
     name: string;
     statechart: StateChart;
     childStates: State[];
@@ -33,8 +40,6 @@ interface AnyState {
     concurrentSubStates();
     enterFns: Function[];
     exitFns: Function[];
-    enter(fn: Function): State;
-    exit(fn: Function): State;
     subState(name: string, nestingFn?: StateCallback): State;
     defaultTo(state: State): State;
     changeDefaultTo(state: State): State;
@@ -43,6 +48,7 @@ interface AnyState {
     activeSubState(): State;
     onlyEnterThrough(...states: State[]);
     allowedFrom?: State[];
+    isActive(): bool;
     activeChildState(): State;
 }
 interface State extends AnyState {

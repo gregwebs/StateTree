@@ -49,7 +49,7 @@ However, switching to using a more featureful statechart library should be strai
 * If you are using Sproutcore or Ember, they have their own statechart library with a dependency on the frameworks.
 * [statechart](https://github.com/DavidDurman/statechart), a fully-featured statechart library.
 
-I passed the latter statechart library over because it was originally in somewhat of an abandoned state. It was undocumented and GPL licensed, but it has since been switched to an MIT license and documentation has been added.
+I passed on the latter statechart library over because it was originally in somewhat of an abandoned state. It was undocumented and GPL licensed, but it has since been switched to an MIT license and documentation has been added.
 
 StateTree is MIT licensed and does not require any frameworks (but does currently have a lodash/underscore dependency).
 
@@ -88,8 +88,8 @@ TypeScript
 
 Setup a state chart with `enter` and `exit` callbacks for different transitions.
 Changing the state is done with `state.goTo()`
-You do not indicate what the originating state is.
-The state tree:
+You do not indicate what the originating state is since that is already known.
+Instead, the state tree:
 
  * determines which concurrent substate the new state is in and moves within that concurrent substate
  * moves up the tree as necessary, exiting (invoke exit callback for) each state and setting history states.
@@ -185,6 +185,9 @@ tree.stateFromName('loggedIn')
 
 Callbacks for all transitions can be registered with `tree.enter` and `tree.exit`
 
+## Global error handler
+
+`tree.handleError` can be replaced.
 
 ## Events
 
@@ -202,6 +205,32 @@ If you want to send data with a transition, just create a wrapper function (and 
  myEventSystem.on('stateAEvent', goToStateA)
 ~~~~~~~~~~~~~~
 
+
+## Intersection of multiple states
+
+With the `intersect` function, we can specify enter callbacks that only occur when all of the states become active.
+
+Lets say our application has multiple main tabs, and each tab has the same 2 different views.
+For each tab we could have 2 substates representing the 2 different views, but that may be cumbersome.
+Instead we may want just 2 states for our 2 different views, but we need to tie them into our main tabs.
+We can do this with an intersection.
+
+
+    var chart = {}
+    var viewToggle = root.subState('toggle2Views', function(viewToggle: State) {
+      chart.viewOne = guideFeedToggle.subState('viewOne').enter(function() {
+        activateTab('viewOne')
+      })  
+      chart.viewTwo = guideFeedToggle.subState('viewTwo').defaultState().enter(function() {
+        activateTab('viewTwo')
+      })  
+    })
+
+    sc.intersect(tab2, chart.viewOne).enter(function() {
+       // code to run when both become active
+    })
+
+In a statetree
 
 ## Limiting/Enforcing transitions
 
@@ -291,7 +320,7 @@ For example, if the user must first log in, one way of dealing with that is to c
 
 ~~~~~~~~~~~~~~ {.js}
 var loginDefer = $q.defer()
-loggedin.enter(() => { loginDefer.resolve() })
+loggedin.enter(function() { loginDefer.resolve() })
 
 // change the definition of setDataId to require the loggedin state
 var setDataId = (dataId) => $q.all([loginDefer.promise, dataViewer.setDataId(dataId)])

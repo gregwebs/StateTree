@@ -1,6 +1,6 @@
 (function (_, undefined) {
     var DEBUG = true;
-    var State = function (name, parentState) {
+    function State(name, parentState) {
         this.name = name;
         this.childStates = [];
         this.subStatesAreConcurrent = false;
@@ -15,7 +15,7 @@
             }
             this.statechart.statesByName[name] = this;
         }
-    };
+    }
     State.prototype.subState = function (name, nestingFn) {
         var state = new State(name, this);
         if(nestingFn) {
@@ -74,27 +74,29 @@
         });
         return this;
     };
+    State.prototype.isActive = function () {
+        return this.statechart.isActive[this.name];
+    };
     State.prototype.activeChildState = function () {
-        var _this = this;
         return _.find(this.childStates, function (state) {
-            return _this.statechart.isActive[state.name];
+            return state.isActive();
         });
     };
-    var safeCallback = function (statechart, cb) {
+    function safeCallback(statechart, cb) {
         var args = [];
         for (var _i = 0; _i < (arguments.length - 2); _i++) {
             args[_i] = arguments[_i + 2];
         }
         if(!cb) {
-            return undefined;
+            return;
         }
         try  {
             cb.apply(undefined, args);
         } catch (e) {
             statechart.handleError(e, cb, args);
         }
-    };
-    var exitStates = function (exited) {
+    }
+    function exitStates(exited) {
         _.each(exited.reverse(), function (state) {
             state.statechart.isActive[state.name] = false;
             if(state.parentState) {
@@ -105,25 +107,25 @@
                 safeCallback(state.statechart, exitFn, state);
             });
         });
-    };
-    var iterateActive = function (tree, cb) {
-        _.each(tree.childStates, function (node) {
-            if(tree.statechart.isActive[node.name]) {
-                cb(node);
-                iterateActive(node, cb);
+    }
+    function iterateActive(tree, cb) {
+        _.each(tree.childStates, function (state) {
+            if(state.isActive()) {
+                cb(state);
+                iterateActive(state, cb);
             }
         });
-    };
-    var moveUpToActive = function (state, entered) {
-        if(state.statechart.isActive[state.name]) {
+    }
+    function moveUpToActive(state, entered) {
+        if(state.isActive()) {
             return state;
         } else {
             entered.push(state);
             return moveUpToActive(state.parentState, entered);
         }
-    };
+    }
     var inGoTo = [];
-    var handlePendingGoTo = function (currentState) {
+    function handlePendingGoTo(currentState) {
         var nextState = inGoTo.shift();
         if(inGoTo.length > 0) {
             throw new Error("requested to goTo multiple other states " + _(inGoTo).pluck('name') + " while using a goTo to enter state " + currentState.name);
@@ -132,7 +134,7 @@
             nextState.goTo();
         }
         return currentState;
-    };
+    }
     State.prototype.goTo = function (data) {
         var _this = this;
         if(inGoTo.length > 0) {
@@ -150,7 +152,7 @@
         if(!alreadyActive.subStatesAreConcurrent) {
             _.each(alreadyActive.childStates, function (state) {
                 if(state.name != entered[0].name) {
-                    if(statechart.isActive[state.name]) {
+                    if(state.isActive()) {
                         exited.push(state);
                         iterateActive(state, function (s) {
                             return exited.push(s);
@@ -194,7 +196,54 @@
         }
         return handlePendingGoTo(this);
     };
-    var StateChart = function (root) {
+    function StateIntersection(states) {
+        this.states = states;
+    }
+    StateIntersection.prototype.enter = function (fn) {
+        var _this = this;
+        var enterFn = function () {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            if(_.all(_this.states, function (state) {
+                return state.isActive();
+            })) {
+                if(DEBUG) {
+                    console.log('enter intersection: ' + _.map(_this.states, function (state) {
+                        return state.name;
+                    }).join(' & '));
+                }
+                fn.apply(undefined, args);
+            }
+        };
+        _.each(this.states, function (state) {
+            state.enter(enterFn);
+        });
+    };
+    StateIntersection.prototype.exit = function (fn) {
+        var _this = this;
+        var exitFn = function () {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            if(_.all(_this.states, function (state) {
+                return !state.isActive();
+            })) {
+                if(DEBUG) {
+                    console.log('exit intersection: ' + _.map(_this.states, function (state) {
+                        return state.name;
+                    }).join(' & '));
+                }
+                fn.apply(undefined, args);
+            }
+        };
+        _.each(this.states, function (state) {
+            state.exit(exitFn);
+        });
+    };
+    function StateChart(root) {
         var statesByName = {
         };
         statesByName[root.name] = root;
@@ -238,7 +287,7 @@
                 var statechart = this;
                 iterateActive(statechart.root, function (state) {
                     if(!_.any(state.childStates, function (child) {
-                        return statechart.isActive[child];
+                        return child.isActive();
                     })) {
                         leaves.push(state);
                     }
@@ -264,11 +313,18 @@
             exit: function (fn) {
                 this.exitFn = fn;
                 return this;
+            },
+            intersect: function () {
+                var states = [];
+                for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                    states[_i] = arguments[_i + 0];
+                }
+                return new StateIntersection(states);
             }
         };
         root.statechart = chart;
         return chart;
-    };
+    }
     var makeStateTree = function () {
         return StateChart(new State("root"));
     };
