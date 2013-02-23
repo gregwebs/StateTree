@@ -133,7 +133,6 @@
         if(nextState) {
             nextState.goTo();
         }
-        return currentState;
     }
     State.prototype.goTo = function (data) {
         var _this = this;
@@ -147,7 +146,8 @@
         var alreadyActive = moveUpToActive(this, entered);
         entered.reverse();
         if(alreadyActive.name === this.name) {
-            return handlePendingGoTo(this);
+            handlePendingGoTo(this);
+            return [];
         }
         if(!alreadyActive.subStatesAreConcurrent) {
             _.each(alreadyActive.childStates, function (state) {
@@ -194,7 +194,8 @@
                 throw new Error("expected to go to state " + this.name + ", but now in states " + _(statechart.currentStates()).pluck('name').join(","));
             }
         }
-        return handlePendingGoTo(this);
+        handlePendingGoTo(this);
+        return exited;
     };
     function StateIntersection(states) {
         this.states = states;

@@ -43,7 +43,7 @@ interface AnyState extends HasStateCallbacks {
     subState(name: string, nestingFn?: StateCallback): State;
     defaultTo(state: State): State;
     changeDefaultTo(state: State): State;
-    goTo(data?: any): AnyState;
+    goTo(data?: any): State[];
     defaultState();
     activeSubState(): State;
     onlyEnterThrough(...states: State[]);

@@ -57,7 +57,7 @@ interface AnyState extends HasStateCallbacks {
   defaultTo(state:State): State;
   changeDefaultTo(state: State): State;
 
-  goTo(data?:any): AnyState;
+  goTo(data?:any): State[];
   defaultState();
   activeSubState(): State;
 
@@ -166,7 +166,7 @@ interface RootState extends AnyState { }
   }
 
   function exitStates(exited: State[]): void {
-    _.each(exited.reverse(), (state:State) => {
+    _.each(exited.reverse(), (state: State) => {
       state.statechart.isActive[state.name] = false
       if(state.parentState) state.parentState.history = state
       state.statechart.exitFn(state)
@@ -194,7 +194,7 @@ interface RootState extends AnyState { }
 
 
   var inGoTo = []
-  function handlePendingGoTo(currentState: State): State {
+  function handlePendingGoTo(currentState: State): void {
     var nextState = inGoTo.shift()
     if (inGoTo.length > 0) {
       throw new Error("requested to goTo multiple other states " +
@@ -203,9 +203,10 @@ interface RootState extends AnyState { }
       )
     }
     if (nextState) nextState.goTo()
-    return currentState
   }
 
+  // returns: an array of the states that were exited for this goTo
+  //
   // this is the heart & soul of the statemachine
   // our state machine is actually a tree with active branches
   // statechart.isActive knows about every active state
@@ -219,20 +220,21 @@ interface RootState extends AnyState { }
   // goTo takes an optional data parameter that will be passed
   // to the enter callback, but only for this goTo state.
   // Other states entered will not have their enter callback receive the data
-  State.prototype.goTo = function(data?: any): AnyState {
+  State.prototype.goTo = function(data?: any): State[] {
     if (inGoTo.length > 0) {
       inGoTo.push(this)
       return
     }
 
-    var statechart = this.statechart
-    var entered = []
-    var exited = []
+    var statechart : StateChart = this.statechart
+    var entered : State[] = []
+    var exited  : State[] = []
     var alreadyActive = moveUpToActive(this, entered)
     entered.reverse()
 
     if (alreadyActive.name === this.name) {
-      return handlePendingGoTo(this)
+      handlePendingGoTo(this)
+      return []
       // throw new Error("already in state: " + this.name)
     }
 
@@ -294,7 +296,8 @@ interface RootState extends AnyState { }
       }
     }
 
-    return handlePendingGoTo(this)
+    handlePendingGoTo(this)
+    return exited
   }
 
   // A StateIntersection allows enter & exit callbacks to be triggered when multiple states are entered/exited
