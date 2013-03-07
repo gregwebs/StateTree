@@ -6,14 +6,14 @@ interface StateChart {
     currentStates(): AnyState[];
     activeStates(): AnyState[];
     isActive: {
-        [name: string]: Boolean;
+        [name: string]: bool;
     };
     statesByName: {
         [name: string]: AnyState;
     };
     stateFromName(name: string): AnyState;
     handleError: Function;
-    defaultToHistory: Boolean;
+    defaultToHistory: bool;
     defaultToHistoryState();
     enterFn(state: State): void;
     exitFn(state: State): void;

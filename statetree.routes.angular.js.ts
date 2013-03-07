@@ -8,10 +8,14 @@ declare var ender
 declare var define
 declare var module
 
-interface RouteMaker {
-  (state:State, route: any[], get?: () => any[], set?:(...params:any[]) => ng.IHttpPromise, watch?: bool):void;
+interface RouteOpts {
+  watch?: bool;
+  priority?: number;
 }
-interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationService, $q: ng.IQService, $rootScope: ng.IRootScopeService, waitOn: ng.IHttpPromise) => RouteMaker; }
+interface RouteMaker {
+  (state: State, route: any[], get?: () => any[], set?:(...params:any[]) => ng.IPromise, opts?: RouteOpts): void;
+}
+interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $location: ng.ILocationService, $q: ng.IQService, $rootScope: ng.IRootScopeService, waitOn: ng.IPromise) => RouteMaker; }
 
 // dependencies: AngularJS routing and lodash/underscore for map, probably should write my own map function
 //
@@ -24,11 +28,29 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
 (function(_, undefined){
   // var DEBUG = true
 
-  var routeGenerator = (routeProvider:any, $location:ng.ILocationService, $q: ng.IQService, $rootScope: ng.IRootScopeService, waitOn?: ng.IHttpPromise) =>
+  function routeGenerator(
+    routeProvider : ng.IRouteProviderProvider,
+    $location     : ng.ILocationService,
+    $q            : ng.IQService,
+    $rootScope    : ng.IRootScopeService,
+    waitOn?       : ng.IPromise) {
+
+    var priorities = {}
+    var activeState : State = null
+
+
     // The get and set parameterers are callbacks.
     // If the set callback should return nothing or a promise.
     // If it returns a promise, the state transition will not occur until the promise is resolved
-    (state: State, route: any[], get?: () => any[] = function(){return []}, set?:(...params:any[]) => ng.IHttpPromise = function(){return null}, watch?: bool = false):void => {
+    return (
+    state : State,
+    route : any[],
+    get?  : () => any[] = function(){return []},
+    set?  : (...params: any[]) => ng.IPromise = function(){return null},
+    opts? : RouteOpts = {}): void => {
+
+      if (opts.priority) { priorities[state.name] = opts.priority }
+
       var nParams = 0
       var routeVars = []
       var routeStr = '/' + _.map(route, (piece, i) => {
@@ -64,7 +86,9 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
           var promise = set.apply(null, transformedVars)
           var goTo = () => { 
             // if (DEBUG) { console.log('goto ' + routeStr) }
-            state.goTo({urlAlreadySet: true})
+            if (setActiveState(state)) {
+              state.goTo({urlAlreadySet: true})
+            }
           }
           var promises = _.compact([promise && promise.then && promise, waitOn])
           if (promises.length > 0) { $q.all(promises).then(goTo) } else { goTo() }
@@ -86,10 +110,25 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
           }
         }
 
-        if (!watch) updateLocation(paramValues)
+        if (!opts.watch) updateLocation(paramValues)
       })
 
+      function setActiveState(state: State): bool {
+        if (activeState){
+          var newPriority = priorities[state.name] || 0
+          var oldPriority = priorities[activeState.name] || 0
+          if (oldPriority > newPriority && activeState.isActive()) {
+            return false
+          }
+        }
+
+        activeState = state
+        return true
+      }
+
       function updateLocation(paramValues: any): void {
+        if (!setActiveState(state)) { return }
+
         var routeVarsPosition = 0
         $location.path(
           _.map(route, (piece, i) => {
@@ -100,7 +139,7 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
         )
       }
 
-      if (watch) {
+      if (opts.watch) {
         var deregister = null
         state
           .enter(() => {
@@ -110,6 +149,7 @@ interface Window { routeGenerator:(routeProvider:any, $location: ng.ILocationSer
         })
       }
     }
+  }
 
   // module is a reserved word in TypeScript, guess I need to use their module thing
   // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }

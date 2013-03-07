@@ -329,9 +329,20 @@ var setDataId = (dataId) => $q.all([loginDefer.promise, dataViewer.setDataId(dat
 var mkRoute = routeGenerator(routeProvider, $location, $q, $rootScope, loginDefer.promise)
 ~~~~~~~~~~~~~~
 
+
+### Watching
+
 Another feature I added is watching for changes within a state by setting the watch flag to true for mkRoute.
 
-    mkRoute(openDataDetail, ['data', Number], getParameters, setParameter, true)
+    mkRoute(openDataDetail, ['data', Number], getParameters, setParameter, {watch: true})
 
 Now getParameters will be called in the watch cycle and the url will be automatically updated when getParameters changes
 
+
+### Priorities
+
+Concurrent substates means the user can be in multiple states that have routes at the same time. Normally whichever state is entered last will win. However, you can set a priority so that the concurrent state with the highest priority will be the winner (default priority is 0):
+
+    mkRoute(openDataDetail, ['data', Number], getParameters, setParameter, {priority: 1})
+
+Probably there should be a way to represent multiple concurrent states in the url, but this feature may still be useful even then to prioritize which state shows first in the url.

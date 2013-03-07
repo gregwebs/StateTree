@@ -1,13 +1,20 @@
 (function (_, undefined) {
-    var routeGenerator = function (routeProvider, $location, $q, $rootScope, waitOn) {
-        return function (state, route, get, set, watch) {
+    function routeGenerator(routeProvider, $location, $q, $rootScope, waitOn) {
+        var priorities = {
+        };
+        var activeState = null;
+        return function (state, route, get, set, opts) {
             if (typeof get === "undefined") { get = function () {
                 return [];
             }; }
             if (typeof set === "undefined") { set = function () {
                 return null;
             }; }
-            if (typeof watch === "undefined") { watch = false; }
+            if (typeof opts === "undefined") { opts = {
+            }; }
+            if(opts.priority) {
+                priorities[state.name] = opts.priority;
+            }
             var nParams = 0;
             var routeVars = [];
             var routeStr = '/' + _.map(route, function (piece, i) {
@@ -46,9 +53,11 @@
                         }
                         var promise = set.apply(null, transformedVars);
                         var goTo = function () {
-                            state.goTo({
-                                urlAlreadySet: true
-                            });
+                            if(setActiveState(state)) {
+                                state.goTo({
+                                    urlAlreadySet: true
+                                });
+                            }
                         };
                         var promises = _.compact([
                             promise && promise.then && promise, 
@@ -74,11 +83,25 @@
                         throw new Error("Expected get function to return " + routeVars.length + " values.");
                     }
                 }
-                if(!watch) {
+                if(!opts.watch) {
                     updateLocation(paramValues);
                 }
             });
+            function setActiveState(state) {
+                if(activeState) {
+                    var newPriority = priorities[state.name] || 0;
+                    var oldPriority = priorities[activeState.name] || 0;
+                    if(oldPriority > newPriority && activeState.isActive()) {
+                        return false;
+                    }
+                }
+                activeState = state;
+                return true;
+            }
             function updateLocation(paramValues) {
+                if(!setActiveState(state)) {
+                    return;
+                }
                 var routeVarsPosition = 0;
                 $location.path(_.map(route, function (piece, i) {
                     if(angular.isString(piece)) {
@@ -88,7 +111,7 @@
                     return paramValues[routeVarsPosition - 1];
                 }).join('/'));
             }
-            if(watch) {
+            if(opts.watch) {
                 var deregister = null;
                 state.enter(function () {
                     deregister = $rootScope.$watch(get, updateLocation, true);
@@ -98,8 +121,8 @@
                     }
                 });
             }
-        }
-    };
+        };
+    }
     if(typeof window !== "undefined") {
         window.routeGenerator = routeGenerator;
     }
