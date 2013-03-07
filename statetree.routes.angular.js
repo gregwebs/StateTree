@@ -53,11 +53,9 @@
                         }
                         var promise = set.apply(null, transformedVars);
                         var goTo = function () {
-                            if(setActiveState(state)) {
-                                state.goTo({
-                                    urlAlreadySet: true
-                                });
-                            }
+                            state.goTo({
+                                urlAlreadySet: true
+                            });
                         };
                         var promises = _.compact([
                             promise && promise.then && promise, 
@@ -72,6 +70,7 @@
             });
             state.enter(function (_state, data) {
                 if(data && data.urlAlreadySet) {
+                    setActiveState(state);
                     return;
                 }
                 if(routeVars.length > 0) {

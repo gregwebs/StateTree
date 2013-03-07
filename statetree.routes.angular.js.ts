@@ -86,9 +86,7 @@ interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $l
           var promise = set.apply(null, transformedVars)
           var goTo = () => { 
             // if (DEBUG) { console.log('goto ' + routeStr) }
-            if (setActiveState(state)) {
-              state.goTo({urlAlreadySet: true})
-            }
+            state.goTo({urlAlreadySet: true})
           }
           var promises = _.compact([promise && promise.then && promise, waitOn])
           if (promises.length > 0) { $q.all(promises).then(goTo) } else { goTo() }
@@ -96,7 +94,10 @@ interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $l
       })
 
       state.enter((_state, data) => {
-        if (data && data.urlAlreadySet) return
+        if (data && data.urlAlreadySet) {
+            setActiveState(state)
+            return
+        }
 
         if (routeVars.length > 0) {
           var paramValues = get()
