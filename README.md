@@ -161,6 +161,10 @@ openPopup.goTo()
 * The popup can be opened and closed without effecting the main state.
 
 
+## Active states
+
+StateTree keeps a hash of active states. Just call `state.isActive()` to determine if a state is active. There is also `tree.currentStates()` to find active leaves and `tree.activeStates()` to get an array of active states breadth-first.
+
 ## History states
 
 History states let us know the previous substate so we can easily restore previous application state.
