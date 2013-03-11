@@ -75,7 +75,7 @@
         return this;
     };
     State.prototype.isActive = function () {
-        return this.statechart.isActive[this.name];
+        return !!this.statechart.isActive[this.name];
     };
     State.prototype.activeChildState = function () {
         return _.find(this.childStates, function (state) {

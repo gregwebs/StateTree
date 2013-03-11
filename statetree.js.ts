@@ -131,24 +131,24 @@ interface RootState extends AnyState { }
     return this
   }
 
-  State.prototype.enter = function(fn: Function):State {
+  State.prototype.enter = function(fn: Function): State {
     this.enterFns.push(fn)
     return this
   }
 
-  State.prototype.exit = function(fn: Function):State {
+  State.prototype.exit = function(fn: Function): State {
     this.exitFns.push(fn)
     return this
   }
 
-  State.prototype.onlyEnterThrough = function(...states: State[]):State {
+  State.prototype.onlyEnterThrough = function(...states: State[]): State {
     if (this.allowedFrom) { throw new Error("allowed states are already set") }
     this.allowedFrom = _.map(states, (state) => state.name)
     return this
   }
 
   State.prototype.isActive = function(): bool {
-    return this.statechart.isActive[this.name]
+    return !!this.statechart.isActive[this.name]
   }
 
   State.prototype.activeChildState = function():State {
