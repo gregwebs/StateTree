@@ -1,11 +1,10 @@
 # StateTree: simple javascript statechart implemenation.
 
-# About
-
 
 ## What is a state chart?
 
 A statechart is similar to a FSM (finite state machine), but extends the concept with hierarchy, concurrency, and communication.
+
 
 ## Why statecharts?
 
@@ -18,6 +17,7 @@ Rather than having implicit state mutation, Statecharts allow us to be very expl
 This leads to fewer defects, lets us reason about how our application operates, and even explain it to non-programmers.
 
 Every feature in this library was created to satisfy a need in an [application](https://apps.facebook.com/yaptvguide/).
+
 
 ## Why not FSMs?
 
@@ -32,46 +32,56 @@ Ember.js has taken a great approach of combining routing with a statechart. Howe
 
 ## StateTree
 
-StateTree is a simplification of the statechart concept. 
-Our statechart is modeled as a tree (hierarchy) with multiple active branches (concurrency).
-There are no library features for the broadcast communication aspect of statecharts.
+StateTree is an implementation of the statechart concept. 
+The name comes from how a statechart can be modeled as a tree (hierarchy).
+StateTree can have multiple active branches (concurrency).
+Perhaps the biggest feature of StateTree is safety.
 
-StateTree was developed for managing the state of a typical client-side UI where the user is able to navigate around the entire UI.
+
+### Safety
+
+Other statechart libraries ask you to give a large JSON structure to describe your state chart.
+JSON hierarchy looks nice, but these structures normally rely on strings that are a typo away from silent error.
+StateTree instead uses setter methods (aka builder pattern similar to other libraries such as d3) because they will always fail immediately at runtime if mistyped. With Typescript they fail at compile time.
+
+StateTree is also designed to check for error conditions as soon as possible (usually during configuration) and immediately throw an exception.
+If you use TypeScript (or always call the library functions using the correct types), the goal is for there to be no way to use the library that leads to undefined behavior.
+
+
+#### Typescript
+
+StateTree leverages TypeScript to reduce bugs in the implementation.
+If you are a TypeScript user you can use the provided types to move some errors from runtime to compile time and also to have better autocompletion.
+If you are not a TypeScript user, just ignore the non-js files.
+
+
+### Background
+
+StateTree was developed for managing the state of a [single-page client-side UI](https://apps.facebook.com/yaptvguide) where the user is able to navigate around the entire UI.
 There are few illegal state transitions in such a scenario.
 Rather than have the user wire an event for every transition, you simply goto the state you would like with state.goTo()
 There is one function to restrict state transitions: `onlyEnterThrough`.
 
-As a result, StateTree is smaller and simpler to use than most alternatives.
-You may find its features to be lacking.
-However, switching to using a more featureful statechart library should be straightforward because StateTree should be a subset.
+After success with application state, I wanted to use StateTree for more traditional FSM tasks.
+An experimental signal (event) implementation is now available in statetree.signal.js
+When this extension matures StateTree should be suitable for any state machine problem.
+
+
+### Alternatives
 
 * Stativus is a fully-featured statechart library.
 * If you are using Sproutcore or Ember, they have their own statechart library with a dependency on the frameworks.
 * [statechart](https://github.com/DavidDurman/statechart), a fully-featured statechart library.
 
-I passed on the latter statechart library over because it was originally in somewhat of an abandoned state. It was undocumented and GPL licensed, but it has since been switched to an MIT license and documentation has been added.
-
 StateTree is MIT licensed and does not require any frameworks (but does currently have a lodash/underscore dependency).
 
+I passed on the latter statechart library over because it was originally in somewhat of an abandoned state. It was undocumented and GPL licensed, but it has since been switched to an MIT license and documentation has been added.
+
 I have reviewed other libraries, but Stativus is the only one I have used.
-Stativus requires you to define state transtition events, which is required for certain use cases, but burdensome for mine.
+Stativus requires you to define state transtition events, which is required for certain use cases, but burdensome for some of mine.
 I ran into buggy or undefined behavior with Stativus where no error was thrown, but things just didn't work in the way I thought they would, and I had great difficulty tracking the issue down in the source code and decided it would be better just to roll my own solution.
-In contrast, StateTree is designed to check for error conditions whenever possible and immediately throw an exception.
-If you use TypeScript (or always call the library functions using the correct types), the goal is for there to be no way to use the library that leads to undefined behavior.
 
 
-
-## Safety
-
-Most other statechart libraries ask you to give a large JSON structure to describe your state chart.
-JSON hierarchy looks nice, but these structures normally rely on strings that are a typo away from silent error.
-StateTree instead uses setter methods (aka builder pattern similar to other libraries such as d3) because they will always fail immediately at runtime if mistyped. With Typescript they can fail at compile time.
-
-## Typescript
-
-StateTree leverages TypeScript to reduce bugs in the implementation.
-If you are a TypeScript user you can use the provided types to move some errors from runtime to compile time and also to have better autocompletion.
-If you are not a TypeScript user, just grap the js file.
 
 
 # Dependencies
@@ -81,7 +91,7 @@ lodash/underscore (this dependency can be removed in the future)
 
 # Development Requirements
 
-TypeScript
+TypeScript (feel free to send a pure js patch and I can make sure it works in TypeScript)
 
 
 # Usage
@@ -189,6 +199,15 @@ tree.stateFromName('loggedIn')
 
 Callbacks for all transitions can be registered with `tree.enter` and `tree.exit`
 
+## State local data
+
+There is a field `data` on the State object reserved for state-local data.
+`setData` is a convenience configuration chaining method.
+
+~~~~~~~~~~~~~~ {.js}
+state.setData({}).enter((state) => state.data)
+~~~~~~~~~~~~~~
+
 ## Global error handler
 
 `tree.handleError` can be replaced with your own function.
@@ -201,8 +220,12 @@ false means stop the current transitions and instead keep the state machine in i
 
 ## Events
 
-There is no event system.
-If you want to send data with a transition, just create a wrapper function (and tie it to an event if you want).
+For many use-cases, specifying events through which the statechart is allowed to transition can be very helpful.
+For that we have signals: see the next section.
+
+For certain use-cases (like application state), specifying transitions through events isn't necessary.
+And you can also achieve some of the functionality through the interface you expose to your statechart.
+If you want to send data with a transition, you can create a wrapper function (and tie it to an event if you want).
 
 ~~~~~~~~~~~~~~ {.js}
  // wrapper function
@@ -215,8 +238,27 @@ If you want to send data with a transition, just create a wrapper function (and 
  myEventSystem.on('stateAEvent', goToStateA)
 ~~~~~~~~~~~~~~
 
- `goTo` also takes an optional data parameter that will be passed as the 2nd argument to the enter callback, but only for the final destination state.
- Other states entered will not have their enter callback receive the data.
+`goTo` also takes an optional data parameter that will be passed as the 2nd argument to the enter callback for the final destination state.
+Other parent states entered will not have their enter callback receive the data.
+
+
+
+### Signals
+
+I am calling the event system signals because like [js-signals](http://millermedeiros.github.com/js-signals/) it doesn't use strings.
+
+Add the file statetree.signal.js to your dependencies *after* statetree.js
+
+~~~~~~~~~~~~~~ {.js}
+// given states: inactive, requesting, and queued
+var requestCompleted = tree.signal('requestCompleted', (sig) => {
+  sig.from(inactive, requesting).to(inactive)
+     .from(queued).to(requesting)
+       .with(() => queued.data.queuedReq)
+})
+~~~~~~~~~~~~~~
+
+Please note this is a new feature that I have only used for a single-level state machine, I will make sure it works well with hierarchies soon.
 
 
 ## Intersection of multiple states
@@ -243,7 +285,6 @@ We can do this with an intersection.
        // code to run when both become active
     })
 
-In a statetree
 
 ## Limiting/Enforcing transitions
 

@@ -74,6 +74,10 @@
         });
         return this;
     };
+    State.prototype.setData = function (data) {
+        this.data = data;
+        return this;
+    };
     State.prototype.isActive = function () {
         return !!this.statechart.isActive[this.name];
     };
@@ -257,13 +261,16 @@
             state.exit(exitFn);
         });
     };
-    function StateChart(root) {
+    function StateChart(root, extensions) {
         var statesByName = {
         };
         statesByName[root.name] = root;
         var isActive = {
         };
         isActive[root.name] = true;
+        var Signal = extensions.Signal || function () {
+            throw new Error("error using tree.signal(): statetree.signal.js is not loaded");
+        };
         var chart = {
             root: root,
             statesByName: statesByName,
@@ -335,13 +342,22 @@
                     states[_i] = arguments[_i + 0];
                 }
                 return new StateIntersection(states);
+            },
+            signal: function (name, cb) {
+                var _this = this;
+                var signal = new Signal(name);
+                cb(signal);
+                signal.allStatesHandled();
+                return function () {
+                    return signal.dispatch(_this, arguments);
+                };
             }
         };
         root.statechart = chart;
         return chart;
     }
     var makeStateTree = function () {
-        return StateChart(new State("root"));
+        return StateChart(new State("root"), makeStateTree);
     };
     if(typeof window !== "undefined") {
         window['makeStateTree'] = makeStateTree;

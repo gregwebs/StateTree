@@ -1,10 +1,3 @@
-declare var lodash
-
-// for exports
-declare var ender
-declare var define
-declare var module
-
 interface EnhancedError extends Error {
   stack: any;
 }
@@ -32,10 +25,15 @@ interface StateChart {
   exit( fn: StateCallback): void;
 
   intersect(...states: State[]): StateIntersection;
+
+  // could type this a little better, but then would require types from statetree.signal.js
+  signal(name: string, cb: Function): Function;
 }
 
 interface StateDataCallback {
-  (state: State, data?: any): void;
+  // data is actually optional
+  (state: State, data: any): void;
+  // (state: State): void;
 }
 interface StateCallback {
   (state: State, data?: any): void;
@@ -72,6 +70,7 @@ interface AnyState extends HasStateCallbacks {
   onlyEnterThrough(...states: State[]);
   allowedFrom?: State[];
 
+  setData(data: any): State;
   isActive(): bool;
   activeChildState(): State;
 
@@ -155,6 +154,11 @@ interface RootState extends AnyState { }
   State.prototype.onlyEnterThrough = function(...states: State[]): State {
     if (this.allowedFrom) { throw new Error("allowed states are already set") }
     this.allowedFrom = _.map(states, (state) => state.name)
+    return this
+  }
+
+  State.prototype.setData = function(data: any): State {
+    this.data = data
     return this
   }
 
@@ -343,11 +347,14 @@ interface RootState extends AnyState { }
     _.each(this.states, (state: State) => { state.exit(exitFn) })
   }
 
-  function StateChart(root: RootState): StateChart {
+  function StateChart(root: RootState, extensions: any): StateChart {
     var statesByName = {}
     statesByName[root.name] = root
     var isActive = {}
     isActive[root.name] = true
+    var Signal = extensions.Signal || function(){
+      throw new Error("error using tree.signal(): statetree.signal.js is not loaded")
+    }
 
     var chart = {
       root: root
@@ -401,16 +408,32 @@ interface RootState extends AnyState { }
         return this
       }
     , intersect: (...states: State[]) => new StateIntersection(states)
+    , signal: function(name: string, cb: Function){
+        var signal = new Signal(name)
+        cb(signal)
+        signal.allStatesHandled()
+        return () => signal.dispatch(this, arguments)
+      }
     }
     root.statechart = chart;
     return chart;
   }
 
-  var makeStateTree = () => StateChart(new State("root"))
+
+  var makeStateTree = function() { return StateChart(new State("root"), makeStateTree) }
 
   // module is a reserved word in TypeScript, guess I need to use their module thing
   // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }
-  if(typeof window !== "undefined") { window['makeStateTree'] = makeStateTree; }
-  if (typeof ender === 'undefined') { this['makeStateTree'] = makeStateTree; }
+  if (typeof window !== "undefined") { window['makeStateTree'] = makeStateTree; }
+  if (typeof  ender === 'undefined') { this['makeStateTree'] = makeStateTree; }
   if (typeof define === "function" && define.amd) { define("makeStateTree", [], function () { return makeStateTree; }); }
 }).call(this, lodash)
+
+// imports
+declare var lodash
+
+// for exports
+declare var ender
+declare var define
+declare var module
+
