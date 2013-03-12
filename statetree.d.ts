@@ -15,10 +15,12 @@ interface StateChart {
         [name: string]: AnyState;
     };
     stateFromName(name: string): AnyState;
-    handleError(e: Error, cb: StateDataCallback, ...args: any[]): bool;
+    handleError(e: Error, cb: (state: State) => void, ...args: any[]): bool;
+    handleError(e: Error, cb: (state: State, data: any) => void, ...args: any[]): bool;
     defaultToHistory: bool;
     defaultToHistoryState();
-    enterFn: StateDataCallback;
+    enterFn(state: State): void;
+    enterFn(state: State, data: any): void;
     exitFn(state: State): void;
     enter(fn: StateCallback): void;
     exit(fn: StateCallback): void;
@@ -26,13 +28,15 @@ interface StateChart {
     signal(name: string, cb: Function): Function;
 }
 interface StateDataCallback {
+    (state: State): void;
     (state: State, data: any): void;
 }
 interface StateCallback {
     (state: State, data?: any): void;
 }
 interface HasStateCallbacks {
-    enter(fn: StateDataCallback): State;
+    enter(fn: (state: State) => void): State;
+    enter(fn: (state: State, data: any) => void): State;
     exit(fn: StateCallback): State;
 }
 interface StateIntersection extends HasStateCallbacks {

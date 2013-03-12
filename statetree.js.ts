@@ -14,12 +14,15 @@ interface StateChart {
   stateFromName(name: string): AnyState;
 
   // return of false means stop transitioning
-  handleError(e: Error, cb: StateDataCallback, ...args: any[]): bool;
+  handleError(e: Error, cb: (state: State) => void, ...args: any[]): bool;
+  handleError(e: Error, cb: (state: State, data: any) => void, ...args: any[]): bool;
 
   defaultToHistory : bool;
   defaultToHistoryState();
 
-  enterFn: StateDataCallback;
+  enterFn(state: State): void;
+  enterFn(state: State, data: any): void;
+
   exitFn( state: State)   : void;
   enter(fn: StateCallback): void;
   exit( fn: StateCallback): void;
@@ -30,17 +33,18 @@ interface StateChart {
   signal(name: string, cb: Function): Function;
 }
 
+// this doesn't actually work, needs to be in-lined
 interface StateDataCallback {
-  // data is actually optional
+  (state: State): void;
   (state: State, data: any): void;
-  // (state: State): void;
 }
 interface StateCallback {
   (state: State, data?: any): void;
 }
 
 interface HasStateCallbacks {
-  enter(fn: StateDataCallback): State;
+  enter(fn:  (state: State) => void): State;
+  enter(fn:  (state: State, data: any) => void): State;
   exit( fn: StateCallback): State;
 }
 
