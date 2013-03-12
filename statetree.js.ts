@@ -5,6 +5,10 @@ declare var ender
 declare var define
 declare var module
 
+interface EnhancedError extends Error {
+  stack: any;
+}
+
 interface MakeStateTree { ():StateChart; }
 
 interface StateChart {
@@ -16,29 +20,33 @@ interface StateChart {
   statesByName    : {[name: string]: AnyState;};
   stateFromName(name: string): AnyState;
 
-  handleError      : Function;
+  // return of false means stop transitioning
+  handleError(e: Error, cb: StateDataCallback, ...args: any[]): bool;
 
   defaultToHistory : bool;
   defaultToHistoryState();
 
-  enterFn(state: State)      : void;
-  exitFn( state: State)      : void;
-  enter(fn: (State) => void) : void;
-  exit( fn: (State) => void) : void;
+  enterFn: StateDataCallback;
+  exitFn( state: State)   : void;
+  enter(fn: StateCallback): void;
+  exit( fn: StateCallback): void;
 
   intersect(...states: State[]): StateIntersection;
 }
 
+interface StateDataCallback {
+  (state: State, data?: any): void;
+}
+interface StateCallback {
+  (state: State, data?: any): void;
+}
+
 interface HasStateCallbacks {
-  enter(fn: Function): State;
-  exit(fn: Function): State;
+  enter(fn: StateDataCallback): State;
+  exit( fn: StateCallback): State;
 }
 
 interface StateIntersection extends HasStateCallbacks {}
-
-interface StateCallback {
-  (state: State): void;
-}
 
 interface AnyState extends HasStateCallbacks {
   name: string;
@@ -50,10 +58,10 @@ interface AnyState extends HasStateCallbacks {
   subStatesAreConcurrent: bool;
   concurrentSubStates();
 
-  enterFns: Function[];
-  exitFns: Function[];
+  enterFns: StateDataCallback[];
+  exitFns:  StateCallback[];
 
-  subState(name: string, nestingFn?: StateCallback): State;
+  subState(name: string, nestingFn?: (State) => void): State;
   defaultTo(state:State): State;
   changeDefaultTo(state: State): State;
 
@@ -66,6 +74,9 @@ interface AnyState extends HasStateCallbacks {
 
   isActive(): bool;
   activeChildState(): State;
+
+  // user state local storage
+  data: any;
 }
 
 interface State extends AnyState {
@@ -131,12 +142,12 @@ interface RootState extends AnyState { }
     return this
   }
 
-  State.prototype.enter = function(fn: Function): State {
+  State.prototype.enter = function(fn: StateDataCallback): State {
     this.enterFns.push(fn)
     return this
   }
 
-  State.prototype.exit = function(fn: Function): State {
+  State.prototype.exit = function(fn: StateCallback): State {
     this.exitFns.push(fn)
     return this
   }
@@ -151,28 +162,32 @@ interface RootState extends AnyState { }
     return !!this.statechart.isActive[this.name]
   }
 
-  State.prototype.activeChildState = function():State {
+  State.prototype.activeChildState = function(): State {
     return _.find(this.childStates, (state) => state.isActive())
   }
 
 
   // TODO: configurable for error reporting
-  function safeCallback(statechart: StateChart, cb: Function, ...args: any[]): void {
-    if (!cb) { return }
-    try { cb.apply(undefined, args) }
+  function safeCallback(context: any, statechart: StateChart, cb: StateDataCallback, ...args: any[]): bool {
+    if (!cb) { return true }
+    try {
+      cb.apply(context, args)
+      return true
+    }
     catch(e) { 
-      statechart.handleError(e, cb, args)
+      return statechart.handleError(e, cb, args)
     }
   }
 
-  function exitStates(exited: State[]): void {
-    _.each(exited.reverse(), (state: State) => {
+  function exitStates(exited: State[]): bool {
+    return _.any(exited.reverse(), (state: State) => {
+      var stopTransition = _.any(state.exitFns, (exitFn) =>
+        !safeCallback(undefined, state.statechart, exitFn, state)
+      )
+      if (stopTransition) { return stopTransition }
       state.statechart.isActive[state.name] = false
       if(state.parentState) state.parentState.history = state
-      state.statechart.exitFn(state)
-      lodash.each(state.exitFns, (exitFn) => {
-        safeCallback(state.statechart, exitFn, state)
-      })
+      return !safeCallback(state.statechart, state.statechart, state.statechart.exitFn, state)
     })
   }
 
@@ -205,7 +220,9 @@ interface RootState extends AnyState { }
     if (nextState) nextState.goTo()
   }
 
+  // Normally a return value is not needed.
   // returns: an array of the states that were exited for this goTo
+  // if there was an exception during state transitions, it returns null
   //
   // this is the heart & soul of the statemachine
   // our state machine is actually a tree with active branches
@@ -225,6 +242,10 @@ interface RootState extends AnyState { }
       inGoTo.push(this)
       return
     }
+    function returnWith(arg: any){
+      handlePendingGoTo(this)
+      return arg
+    }
 
     var statechart : StateChart = this.statechart
     var entered : State[] = []
@@ -232,11 +253,7 @@ interface RootState extends AnyState { }
     var alreadyActive = moveUpToActive(this, entered)
     entered.reverse()
 
-    if (alreadyActive.name === this.name) {
-      handlePendingGoTo(this)
-      return []
-      // throw new Error("already in state: " + this.name)
-    }
+    if (alreadyActive.name === this.name) { return returnWith([]) }
 
     if (!alreadyActive.subStatesAreConcurrent) {
       _.each(alreadyActive.childStates, (state: State) => {
@@ -279,25 +296,25 @@ interface RootState extends AnyState { }
       }
     })
 
-    exitStates(exited)
-
-    _.each(entered, (state: State) => {
-      statechart.enterFn(state)
-      statechart.isActive[state.name] = true
-      var dataParam = this.name == state.name ? data : undefined
-      lodash.each(state.enterFns, (enterFn) => {
-        safeCallback(statechart, enterFn, state, dataParam)
-      })
-    })
+    if (exitStates(exited)) { return returnWith(null) }
+    if (_.any(entered, (state: State): bool => {
+          var dataParam = this.name === state.name ? data : undefined
+          var stopTransition = _.any(state.enterFns, (enterFn) => {
+            !safeCallback(undefined, statechart, enterFn, state, dataParam)
+          })
+          if (stopTransition) { return stopTransition }
+          statechart.isActive[state.name] = true
+          return !safeCallback(statechart, statechart, statechart.enterFn, state, dataParam)
+        })
+      ) { return returnWith(null) }
 
     if (DEBUG) {
-      if (statechart.currentStates().indexOf(expected) == -1) {
+      if (statechart.currentStates().indexOf(expected) === -1) {
         throw new Error("expected to go to state " + this.name + ", but now in states " + _(statechart.currentStates()).pluck('name').join(","))
       }
     }
 
-    handlePendingGoTo(this)
-    return exited
+    return returnWith(exited)
   }
 
   // A StateIntersection allows enter & exit callbacks to be triggered when multiple states are entered/exited
@@ -306,7 +323,7 @@ interface RootState extends AnyState { }
     this.states = states
   }
 
-  StateIntersection.prototype.enter = function(fn:(StateIntersection) => void): void {
+  StateIntersection.prototype.enter = function(fn: (StateIntersection) => void): void {
     var enterFn = (...args: any[]) => {
       if (_.all(this.states, (state) => state.isActive())) {
         if (DEBUG) { console.log('enter intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
@@ -338,15 +355,16 @@ interface RootState extends AnyState { }
     , statesByName: statesByName
       // get a state object from its name.
       // throw error if state name does not exist
-    , stateFromName: (name:string):State => {
+    , stateFromName: (name: string): State => {
         var res = statesByName[name]
         if (!res) throw new Error("invalid state name: " + name)
         return res
       }
     , isActive: isActive
-    , handleError: (e) => {
+    , handleError: (e: EnhancedError) => {
         if(e.message) console.log(e.message)
         if(e.stack)   console.log(e.stack)
+        return false
       }
       // if true, always use the history state once it is available as the default state
     , defaultToHistory: false
@@ -364,21 +382,21 @@ interface RootState extends AnyState { }
           if (!_.any(state.childStates, (child: State) => child.isActive()))
             leaves.push(state)
         })
-        return (leaves.length == 0) ? [this.root] : leaves
+        return (leaves.length === 0) ? [this.root] : leaves
       }
-    , enterFn: (state: State) => {
+    , enterFn: (state: State, data?: any) => {
         if(DEBUG) console.log("entering " + state.name)
       }
-    , enter: function(fn: (State) => void){
+    , enter: function(fn: StateCallback){
         this.enterFn = fn
         return this
       }
-    , exitFn: (state:State) => {
+    , exitFn: (state: State) => {
         if(DEBUG) {
           console.log("exiting: " + state.name + " history of " + state.parentState.name)
         }
       }
-    , exit: function(fn:(State) => void){
+    , exit: function(fn: StateCallback){
         this.exitFn = fn
         return this
       }

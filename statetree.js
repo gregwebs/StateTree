@@ -82,30 +82,34 @@
             return state.isActive();
         });
     };
-    function safeCallback(statechart, cb) {
+    function safeCallback(context, statechart, cb) {
         var args = [];
-        for (var _i = 0; _i < (arguments.length - 2); _i++) {
-            args[_i] = arguments[_i + 2];
+        for (var _i = 0; _i < (arguments.length - 3); _i++) {
+            args[_i] = arguments[_i + 3];
         }
         if(!cb) {
-            return;
+            return true;
         }
         try  {
-            cb.apply(undefined, args);
+            cb.apply(context, args);
+            return true;
         } catch (e) {
-            statechart.handleError(e, cb, args);
+            return statechart.handleError(e, cb, args);
         }
     }
     function exitStates(exited) {
-        _.each(exited.reverse(), function (state) {
+        return _.any(exited.reverse(), function (state) {
+            var stopTransition = _.any(state.exitFns, function (exitFn) {
+                return !safeCallback(undefined, state.statechart, exitFn, state);
+            });
+            if(stopTransition) {
+                return stopTransition;
+            }
             state.statechart.isActive[state.name] = false;
             if(state.parentState) {
                 state.parentState.history = state;
             }
-            state.statechart.exitFn(state);
-            lodash.each(state.exitFns, function (exitFn) {
-                safeCallback(state.statechart, exitFn, state);
-            });
+            return !safeCallback(state.statechart, state.statechart, state.statechart.exitFn, state);
         });
     }
     function iterateActive(tree, cb) {
@@ -140,14 +144,17 @@
             inGoTo.push(this);
             return;
         }
+        function returnWith(arg) {
+            handlePendingGoTo(this);
+            return arg;
+        }
         var statechart = this.statechart;
         var entered = [];
         var exited = [];
         var alreadyActive = moveUpToActive(this, entered);
         entered.reverse();
         if(alreadyActive.name === this.name) {
-            handlePendingGoTo(this);
-            return [];
+            return returnWith([]);
         }
         if(!alreadyActive.subStatesAreConcurrent) {
             _.each(alreadyActive.childStates, function (state) {
@@ -180,22 +187,28 @@
                 throw new Error("cannot transition to state '" + state.name + "' from '" + _this.name + "'. Allowed states: " + state.allowedFrom.join(", "));
             }
         });
-        exitStates(exited);
-        _.each(entered, function (state) {
-            statechart.enterFn(state);
-            statechart.isActive[state.name] = true;
-            var dataParam = _this.name == state.name ? data : undefined;
-            lodash.each(state.enterFns, function (enterFn) {
-                safeCallback(statechart, enterFn, state, dataParam);
+        if(exitStates(exited)) {
+            return returnWith(null);
+        }
+        if(_.any(entered, function (state) {
+            var dataParam = _this.name === state.name ? data : undefined;
+            var stopTransition = _.any(state.enterFns, function (enterFn) {
+                !safeCallback(undefined, statechart, enterFn, state, dataParam);
             });
-        });
+            if(stopTransition) {
+                return stopTransition;
+            }
+            statechart.isActive[state.name] = true;
+            return !safeCallback(statechart, statechart, statechart.enterFn, state, dataParam);
+        })) {
+            return returnWith(null);
+        }
         if(DEBUG) {
-            if(statechart.currentStates().indexOf(expected) == -1) {
+            if(statechart.currentStates().indexOf(expected) === -1) {
                 throw new Error("expected to go to state " + this.name + ", but now in states " + _(statechart.currentStates()).pluck('name').join(","));
             }
         }
-        handlePendingGoTo(this);
-        return exited;
+        return returnWith(exited);
     };
     function StateIntersection(states) {
         this.states = states;
@@ -269,6 +282,7 @@
                 if(e.stack) {
                     console.log(e.stack);
                 }
+                return false;
             },
             defaultToHistory: false,
             defaultToHistoryState: function () {
@@ -293,11 +307,11 @@
                         leaves.push(state);
                     }
                 });
-                return (leaves.length == 0) ? [
+                return (leaves.length === 0) ? [
                     this.root
                 ] : leaves;
             },
-            enterFn: function (state) {
+            enterFn: function (state, data) {
                 if(DEBUG) {
                     console.log("entering " + state.name);
                 }

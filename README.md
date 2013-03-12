@@ -191,11 +191,17 @@ Callbacks for all transitions can be registered with `tree.enter` and `tree.exit
 
 ## Global error handler
 
-`tree.handleError` can be replaced.
+`tree.handleError` can be replaced with your own function.
+This function returns true to indicate that the state machine should continue moving through states as planned.
+false means stop the current transitions and instead keep the state machine in its current state.
+
+## Global enter/exit functions
+
+`tree.enter` & `tree.exit` set a single global enter/exit handler function called after the state is entered/exited.
 
 ## Events
 
-There is no event sytem.
+There is no event system.
 If you want to send data with a transition, just create a wrapper function (and tie it to an event if you want).
 
 ~~~~~~~~~~~~~~ {.js}
@@ -208,6 +214,9 @@ If you want to send data with a transition, just create a wrapper function (and 
  // event hook: use your own event system
  myEventSystem.on('stateAEvent', goToStateA)
 ~~~~~~~~~~~~~~
+
+ `goTo` also takes an optional data parameter that will be passed as the 2nd argument to the enter callback, but only for the final destination state.
+ Other states entered will not have their enter callback receive the data.
 
 
 ## Intersection of multiple states

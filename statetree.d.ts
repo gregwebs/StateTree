@@ -1,3 +1,6 @@
+interface EnhancedError extends Error {
+    stack: any;
+}
 interface MakeStateTree {
     (): StateChart;
 }
@@ -12,23 +15,26 @@ interface StateChart {
         [name: string]: AnyState;
     };
     stateFromName(name: string): AnyState;
-    handleError: Function;
+    handleError(e: Error, cb: StateDataCallback, ...args: any[]): bool;
     defaultToHistory: bool;
     defaultToHistoryState();
-    enterFn(state: State): void;
+    enterFn: StateDataCallback;
     exitFn(state: State): void;
-    enter(fn: (State: any) => void): void;
-    exit(fn: (State: any) => void): void;
+    enter(fn: StateCallback): void;
+    exit(fn: StateCallback): void;
     intersect(...states: State[]): StateIntersection;
 }
-interface HasStateCallbacks {
-    enter(fn: Function): State;
-    exit(fn: Function): State;
-}
-interface StateIntersection extends HasStateCallbacks {
+interface StateDataCallback {
+    (state: State, data?: any): void;
 }
 interface StateCallback {
-    (state: State): void;
+    (state: State, data?: any): void;
+}
+interface HasStateCallbacks {
+    enter(fn: StateDataCallback): State;
+    exit(fn: StateCallback): State;
+}
+interface StateIntersection extends HasStateCallbacks {
 }
 interface AnyState extends HasStateCallbacks {
     name: string;
@@ -38,9 +44,9 @@ interface AnyState extends HasStateCallbacks {
     history?: State;
     subStatesAreConcurrent: bool;
     concurrentSubStates();
-    enterFns: Function[];
-    exitFns: Function[];
-    subState(name: string, nestingFn?: StateCallback): State;
+    enterFns: StateDataCallback[];
+    exitFns: StateCallback[];
+    subState(name: string, nestingFn?: (State: any) => void): State;
     defaultTo(state: State): State;
     changeDefaultTo(state: State): State;
     goTo(data?: any): State[];
@@ -50,6 +56,7 @@ interface AnyState extends HasStateCallbacks {
     allowedFrom?: State[];
     isActive(): bool;
     activeChildState(): State;
+    data: any;
 }
 interface State extends AnyState {
     parentState: State;
