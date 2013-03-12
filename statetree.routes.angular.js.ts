@@ -141,12 +141,11 @@ interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $l
       }
 
       if (opts.watch) {
-        var deregister = null
-        state
+        state.setData({deregister: null})
           .enter(() => {
-            deregister = $rootScope.$watch(get, updateLocation, true)
+            state.data.deregister = $rootScope.$watch(() => get(), updateLocation, true)
         }).exit(() => {
-            if (deregister) deregister()
+            if (state.data.deregister) state.data.deregister()
         })
       }
     }

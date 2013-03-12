@@ -111,12 +111,15 @@
                 }).join('/'));
             }
             if(opts.watch) {
-                var deregister = null;
-                state.enter(function () {
-                    deregister = $rootScope.$watch(get, updateLocation, true);
+                state.setData({
+                    deregister: null
+                }).enter(function () {
+                    state.data.deregister = $rootScope.$watch(function () {
+                        return get();
+                    }, updateLocation, true);
                 }).exit(function () {
-                    if(deregister) {
-                        deregister();
+                    if(state.data.deregister) {
+                        state.data.deregister();
                     }
                 });
             }
