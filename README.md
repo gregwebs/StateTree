@@ -384,14 +384,6 @@ var mkRoute = routeGenerator(routeProvider, $location, $q, $rootScope, loginDefe
 ~~~~~~~~~~~~~~
 
 
-### Watching
-
-Another feature I added is watching for changes within a state by setting the watch flag to true for mkRoute.
-
-    mkRoute(openDataDetail, ['data', Number], getParameters, setParameter, {watch: true})
-
-Now getParameters will be called in the watch cycle and the url will be automatically updated when getParameters changes
-
 
 ### Priorities
 

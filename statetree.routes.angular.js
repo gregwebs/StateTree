@@ -47,8 +47,11 @@
                                 return routeVar.transform($routeParams[routeVar.name]);
                             });
                         } catch (e) {
-                            console.log("error parsing routes, redirecting to root");
+                            if(e.trace) {
+                                console.log(e.trace);
+                            }
                             console.log(e.toString());
+                            console.log("error parsing routes, redirecting to root");
                             $location.path('/');
                         }
                         var promise = set.apply(null, transformedVars);
@@ -82,9 +85,7 @@
                         throw new Error("Expected get function to return " + routeVars.length + " values.");
                     }
                 }
-                if(!opts.watch) {
-                    updateLocation(paramValues);
-                }
+                updateLocation(paramValues);
             });
             function setActiveState(state) {
                 if(activeState) {
@@ -109,19 +110,6 @@
                     routeVarsPosition = routeVarsPosition + 1;
                     return paramValues[routeVarsPosition - 1];
                 }).join('/'));
-            }
-            if(opts.watch) {
-                state.setData({
-                    deregister: null
-                }).enter(function () {
-                    state.data.deregister = $rootScope.$watch(function () {
-                        return get();
-                    }, updateLocation, true);
-                }).exit(function () {
-                    if(state.data.deregister) {
-                        state.data.deregister();
-                    }
-                });
             }
         };
     }

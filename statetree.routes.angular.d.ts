@@ -1,5 +1,4 @@
 interface RouteOpts {
-    watch?: bool;
     priority?: number;
 }
 interface RouteMaker {

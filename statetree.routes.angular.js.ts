@@ -9,7 +9,7 @@ declare var define
 declare var module
 
 interface RouteOpts {
-  watch?: bool;
+  // watch?: bool;
   priority?: number;
 }
 interface RouteMaker {
@@ -79,10 +79,12 @@ interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $l
           try {
             var transformedVars = _.map(routeVars, (routeVar) => routeVar.transform($routeParams[routeVar.name]))
           } catch (e) {
-            console.log("error parsing routes, redirecting to root")
+            if (e.trace) { console.log(e.trace) }
             console.log(e.toString())
+            console.log("error parsing routes, redirecting to root")
             $location.path('/')
           }
+
           var promise = set.apply(null, transformedVars)
           var goTo = () => { 
             // if (DEBUG) { console.log('goto ' + routeStr) }
@@ -111,7 +113,8 @@ interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $l
           }
         }
 
-        if (!opts.watch) updateLocation(paramValues)
+        //if (!opts.watch)
+        updateLocation(paramValues)
       })
 
       function setActiveState(state: State): bool {
@@ -140,14 +143,18 @@ interface Window { routeGenerator: (routeProvider: ng.IRouteProviderProvider, $l
         )
       }
 
+      /*
+      * this is broken because updateLocation triggers the angularjs router which calls the controller and set.apply
+      * I don't think setting a flag to ignore the route change here is guaranteed to work
       if (opts.watch) {
         state.setData({deregister: null})
           .enter(() => {
-            state.data.deregister = $rootScope.$watch(() => get(), updateLocation, true)
+            state.data.deregister = $rootScope.$watch(get, updateLocation, true)
         }).exit(() => {
             if (state.data.deregister) state.data.deregister()
         })
       }
+      */
     }
   }
 
