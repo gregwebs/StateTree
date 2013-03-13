@@ -28,8 +28,6 @@ interface StateChart {
 
   safeCallback(cb: () => void): bool;
 
-  intersect(...states: State[]): StateIntersection;
-
   // could type this a little better, but then would require types from statetree.signal.js
   signal(name: string, cb: Function): Function;
 }
@@ -81,6 +79,8 @@ interface AnyState extends HasStateCallbacks {
 
   // user state local storage
   data: any;
+
+  intersect(...states: State[]): StateIntersection;
 }
 
 interface State extends AnyState {
@@ -313,6 +313,11 @@ interface RootState extends AnyState { }
     return returnWith(exited)
   }
 
+  State.prototype.intersect = function(...states: State[]) {
+    states.unshift(this)
+    return new StateIntersection(states)
+  }
+
   // A StateIntersection allows enter & exit callbacks to be triggered when multiple states are entered/exited
   // TODO: check that the states are concurrent with each other
   function StateIntersection(states: State[]): void {
@@ -411,7 +416,6 @@ interface RootState extends AnyState { }
           return this.handleError(e, cb)
         }
       }
-    , intersect: (...states: State[]) => new StateIntersection(states)
     , signal: function(name: string, cb: Function){
         var signal = new Signal(name)
         cb(signal)

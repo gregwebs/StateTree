@@ -207,6 +207,14 @@
         }
         return returnWith(exited);
     };
+    State.prototype.intersect = function () {
+        var states = [];
+        for (var _i = 0; _i < (arguments.length - 0); _i++) {
+            states[_i] = arguments[_i + 0];
+        }
+        states.unshift(this);
+        return new StateIntersection(states);
+    };
     function StateIntersection(states) {
         this.states = states;
     }
@@ -341,13 +349,6 @@
                 } catch (e) {
                     return this.handleError(e, cb);
                 }
-            },
-            intersect: function () {
-                var states = [];
-                for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                    states[_i] = arguments[_i + 0];
-                }
-                return new StateIntersection(states);
             },
             signal: function (name, cb) {
                 var _this = this;

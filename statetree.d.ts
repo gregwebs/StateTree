@@ -24,7 +24,6 @@ interface StateChart {
     enter(fn: StateCallback): void;
     exit(fn: StateCallback): void;
     safeCallback(cb: () => void): bool;
-    intersect(...states: State[]): StateIntersection;
     signal(name: string, cb: Function): Function;
 }
 interface StateDataCallback {
@@ -63,6 +62,7 @@ interface AnyState extends HasStateCallbacks {
     isActive(): bool;
     activeChildState(): State;
     data: any;
+    intersect(...states: State[]): StateIntersection;
 }
 interface State extends AnyState {
     parentState: State;
