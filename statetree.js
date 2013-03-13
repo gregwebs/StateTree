@@ -212,19 +212,20 @@
     }
     StateIntersection.prototype.enter = function (fn) {
         var _this = this;
-        var enterFn = function () {
+        var enterFn = function (changingState) {
             var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
+            for (var _i = 0; _i < (arguments.length - 1); _i++) {
+                args[_i] = arguments[_i + 1];
             }
             if(_.all(_this.states, function (state) {
-                return state.isActive();
+                return state.name === changingState.name || state.isActive();
             })) {
                 if(DEBUG) {
                     console.log('enter intersection: ' + _.map(_this.states, function (state) {
                         return state.name;
                     }).join(' & '));
                 }
+                args.unshift(changingState);
                 fn.apply(undefined, args);
             }
         };
@@ -234,19 +235,20 @@
     };
     StateIntersection.prototype.exit = function (fn) {
         var _this = this;
-        var exitFn = function () {
+        var exitFn = function (changingState) {
             var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
+            for (var _i = 0; _i < (arguments.length - 1); _i++) {
+                args[_i] = arguments[_i + 1];
             }
             if(_.all(_this.states, function (state) {
-                return !state.isActive();
+                return state.name === changingState.name || !state.isActive();
             })) {
                 if(DEBUG) {
                     console.log('exit intersection: ' + _.map(_this.states, function (state) {
                         return state.name;
                     }).join(' & '));
                 }
+                args.unshift(changingState);
                 fn.apply(undefined, args);
             }
         };

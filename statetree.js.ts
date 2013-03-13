@@ -320,9 +320,10 @@ interface RootState extends AnyState { }
   }
 
   StateIntersection.prototype.enter = function(fn: (StateIntersection) => void): void {
-    var enterFn = (...args: any[]) => {
-      if (_.all(this.states, (state) => state.isActive())) {
+    var enterFn = (changingState: State, ...args: any[]) => {
+      if (_.all(this.states, (state) => state.name === changingState.name || state.isActive())) {
         if (DEBUG) { console.log('enter intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
+        args.unshift(changingState)
         fn.apply(undefined, args)
       }
     }
@@ -330,9 +331,10 @@ interface RootState extends AnyState { }
   }
 
   StateIntersection.prototype.exit = function(fn:(StateIntersection) => void): void {
-    var exitFn = (...args: any[]) => {
-      if (_.all(this.states, (state) => !state.isActive())) { 
+    var exitFn = (changingState: State, ...args: any[]) => {
+      if (_.all(this.states, (state) => state.name === changingState.name || !state.isActive())) { 
         if (DEBUG) { console.log('exit intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
+        args.unshift(changingState)
         fn.apply(undefined, args)
       }
     }
