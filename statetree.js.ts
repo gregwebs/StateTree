@@ -14,8 +14,7 @@ interface StateChart {
   stateFromName(name: string): AnyState;
 
   // return of false means stop transitioning
-  handleError(e: Error, cb: (state: State) => void, ...args: any[]): bool;
-  handleError(e: Error, cb: (state: State, data: any) => void, ...args: any[]): bool;
+  handleError(e: Error, cb: () => void): bool;
 
   defaultToHistory : bool;
   defaultToHistoryState();
@@ -26,6 +25,8 @@ interface StateChart {
   exitFn( state: State)   : void;
   enter(fn: StateCallback): void;
   exit( fn: StateCallback): void;
+
+  safeCallback(cb: () => void): bool;
 
   intersect(...states: State[]): StateIntersection;
 
@@ -174,28 +175,15 @@ interface RootState extends AnyState { }
     return _.find(this.childStates, (state) => state.isActive())
   }
 
-
-  // TODO: configurable for error reporting
-  function safeCallback(context: any, statechart: StateChart, cb: StateDataCallback, ...args: any[]): bool {
-    if (!cb) { return true }
-    try {
-      cb.apply(context, args)
-      return true
-    }
-    catch(e) { 
-      return statechart.handleError(e, cb, args)
-    }
-  }
-
   function exitStates(exited: State[]): bool {
     return _.any(exited.reverse(), (state: State) => {
       var stopTransition = _.any(state.exitFns, (exitFn) =>
-        !safeCallback(undefined, state.statechart, exitFn, state)
+        !state.statechart.safeCallback(() => {exitFn(state)})
       )
       if (stopTransition) { return stopTransition }
       state.statechart.isActive[state.name] = false
       if(state.parentState) state.parentState.history = state
-      return !safeCallback(state.statechart, state.statechart, state.statechart.exitFn, state)
+      return !state.statechart.safeCallback(() => {state.statechart.exitFn(state)})
     })
   }
 
@@ -308,11 +296,11 @@ interface RootState extends AnyState { }
     if (_.any(entered, (state: State): bool => {
           var dataParam = this.name === state.name ? data : undefined
           var stopTransition = _.any(state.enterFns, (enterFn) => {
-            !safeCallback(undefined, statechart, enterFn, state, dataParam)
+            !statechart.safeCallback(() => {enterFn(state, dataParam)})
           })
           if (stopTransition) { return stopTransition }
           statechart.isActive[state.name] = true
-          return !safeCallback(statechart, statechart, statechart.enterFn, state, dataParam)
+          return !statechart.safeCallback(() => {statechart.enterFn(state, dataParam)})
         })
       ) { return returnWith(null) }
 
@@ -410,6 +398,16 @@ interface RootState extends AnyState { }
     , exit: function(fn: StateCallback){
         this.exitFn = fn
         return this
+      }
+    , safeCallback: function(cb: () => void): bool {
+        if (!cb) { return true }
+        try {
+          cb()
+          return true
+        }
+        catch(e) { 
+          return this.handleError(e, cb)
+        }
       }
     , intersect: (...states: State[]) => new StateIntersection(states)
     , signal: function(name: string, cb: Function){

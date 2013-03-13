@@ -15,8 +15,7 @@ interface StateChart {
         [name: string]: AnyState;
     };
     stateFromName(name: string): AnyState;
-    handleError(e: Error, cb: (state: State) => void, ...args: any[]): bool;
-    handleError(e: Error, cb: (state: State, data: any) => void, ...args: any[]): bool;
+    handleError(e: Error, cb: () => void): bool;
     defaultToHistory: bool;
     defaultToHistoryState();
     enterFn(state: State): void;
@@ -24,6 +23,7 @@ interface StateChart {
     exitFn(state: State): void;
     enter(fn: StateCallback): void;
     exit(fn: StateCallback): void;
+    safeCallback(cb: () => void): bool;
     intersect(...states: State[]): StateIntersection;
     signal(name: string, cb: Function): Function;
 }

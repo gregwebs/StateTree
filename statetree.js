@@ -86,25 +86,12 @@
             return state.isActive();
         });
     };
-    function safeCallback(context, statechart, cb) {
-        var args = [];
-        for (var _i = 0; _i < (arguments.length - 3); _i++) {
-            args[_i] = arguments[_i + 3];
-        }
-        if(!cb) {
-            return true;
-        }
-        try  {
-            cb.apply(context, args);
-            return true;
-        } catch (e) {
-            return statechart.handleError(e, cb, args);
-        }
-    }
     function exitStates(exited) {
         return _.any(exited.reverse(), function (state) {
             var stopTransition = _.any(state.exitFns, function (exitFn) {
-                return !safeCallback(undefined, state.statechart, exitFn, state);
+                return !state.statechart.safeCallback(function () {
+                    exitFn(state);
+                });
             });
             if(stopTransition) {
                 return stopTransition;
@@ -113,7 +100,9 @@
             if(state.parentState) {
                 state.parentState.history = state;
             }
-            return !safeCallback(state.statechart, state.statechart, state.statechart.exitFn, state);
+            return !state.statechart.safeCallback(function () {
+                state.statechart.exitFn(state);
+            });
         });
     }
     function iterateActive(tree, cb) {
@@ -197,13 +186,17 @@
         if(_.any(entered, function (state) {
             var dataParam = _this.name === state.name ? data : undefined;
             var stopTransition = _.any(state.enterFns, function (enterFn) {
-                !safeCallback(undefined, statechart, enterFn, state, dataParam);
+                !statechart.safeCallback(function () {
+                    enterFn(state, dataParam);
+                });
             });
             if(stopTransition) {
                 return stopTransition;
             }
             statechart.isActive[state.name] = true;
-            return !safeCallback(statechart, statechart, statechart.enterFn, state, dataParam);
+            return !statechart.safeCallback(function () {
+                statechart.enterFn(state, dataParam);
+            });
         })) {
             return returnWith(null);
         }
@@ -335,6 +328,17 @@
             exit: function (fn) {
                 this.exitFn = fn;
                 return this;
+            },
+            safeCallback: function (cb) {
+                if(!cb) {
+                    return true;
+                }
+                try  {
+                    cb();
+                    return true;
+                } catch (e) {
+                    return this.handleError(e, cb);
+                }
             },
             intersect: function () {
                 var states = [];
