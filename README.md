@@ -71,7 +71,7 @@ When this extension matures StateTree should be suitable for any state machine p
 
 * Stativus is a fully-featured statechart library.
 * If you are using Sproutcore or Ember, they have their own statechart library with a dependency on the frameworks.
-* [statechart](https://github.com/DavidDurman/statechart), a fully-featured statechart library.
+* [statechart](https://github.com/DavidDurman/statechart). Limitations: does not offer concurrent substates.
 
 StateTree is MIT licensed and does not require any frameworks (but does currently have a lodash/underscore dependency).
 
