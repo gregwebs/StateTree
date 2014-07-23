@@ -392,3 +392,10 @@ Concurrent substates means the user can be in multiple states that have routes a
     mkRoute(openDataDetail, ['data', Number], getParameters, setParameter, {priority: 1})
 
 Probably there should be a way to represent multiple concurrent states in the url, but this feature may still be useful even then to prioritize which state shows first in the url.
+
+
+### Development
+
+Generating files
+
+    tsc --sourcemap --declaration statetree.js.ts --out statetree.js
