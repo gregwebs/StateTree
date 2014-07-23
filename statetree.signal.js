@@ -71,5 +71,5 @@
             };
         });
     }
-}).call(this, lodash);
+}).call(this, window['lodash'] || _);
 //# sourceMappingURL=statetree.signal.js.map

@@ -1,5 +1,6 @@
 (function (_, undefined) {
     var DEBUG = true;
+    var DEBUGLOG = DEBUG && window.console;
     function State(name, parentState) {
         this.name = name;
         this.childStates = [];
@@ -270,7 +271,7 @@
             if (_.all(_this.states, function (state) {
                 return state.name === changingState.name || state.isActive();
             })) {
-                if (DEBUG) {
+                if (DEBUGLOG) {
                     console.log('enter intersection: ' + _.map(_this.states, function (state) {
                         return state.name;
                     }).join(' & '));
@@ -294,7 +295,7 @@
             if (_.all(_this.states, function (state) {
                 return state.name === changingState.name || !state.isActive();
             })) {
-                if (DEBUG) {
+                if (DEBUGLOG) {
                     console.log('exit intersection: ' + _.map(_this.states, function (state) {
                         return state.name;
                     }).join(' & '));
@@ -357,7 +358,7 @@
                 return (leaves.length === 0) ? [this.root] : leaves;
             },
             enterFn: function (state, data) {
-                if (DEBUG)
+                if (DEBUGLOG)
                     console.log("entering " + state.name);
             },
             enter: function (fn) {
@@ -365,7 +366,7 @@
                 return this;
             },
             exitFn: function (state) {
-                if (DEBUG) {
+                if (DEBUGLOG) {
                     console.log("exiting: " + state.name + " history of " + state.parentState.name);
                 }
             },
@@ -412,5 +413,5 @@
             return makeStateTree;
         });
     }
-}).call(this, lodash);
+}).call(this, window['lodash'] || _);
 //# sourceMappingURL=statetree.js.map

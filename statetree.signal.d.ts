@@ -6,7 +6,9 @@ interface Transition {
 }
 interface Signal {
     name: string;
-    dispatch(args: any[]);
+    from(...froms: State[]): Signal;
+    to(to: State): Signal;
+    dispatch(args: any[]): void;
     transitions: Transition[];
     cb: Function;
     tree: StateChart;

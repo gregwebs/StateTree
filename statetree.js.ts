@@ -1,3 +1,5 @@
+declare var makeStateTree: MakeStateTree
+
 interface EnhancedError extends Error {
   stack: any;
 }
@@ -91,6 +93,7 @@ interface RootState extends AnyState { }
 
 (function(_, undefined){
   var DEBUG = true
+  var DEBUGLOG = DEBUG && window.console
   function State(name: string, parentState?: AnyState): void {
     this.name = name
     this.childStates = []
@@ -327,7 +330,7 @@ interface RootState extends AnyState { }
   StateIntersection.prototype.enter = function(fn: (StateIntersection) => void): void {
     var enterFn = (changingState: State, ...args: any[]) => {
       if (_.all(this.states, (state) => state.name === changingState.name || state.isActive())) {
-        if (DEBUG) { console.log('enter intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
+        if (DEBUGLOG) { console.log('enter intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
         args.unshift(changingState)
         fn.apply(undefined, args)
       }
@@ -338,7 +341,7 @@ interface RootState extends AnyState { }
   StateIntersection.prototype.exit = function(fn:(StateIntersection) => void): void {
     var exitFn = (changingState: State, ...args: any[]) => {
       if (_.all(this.states, (state) => state.name === changingState.name || !state.isActive())) { 
-        if (DEBUG) { console.log('exit intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
+        if (DEBUGLOG) { console.log('exit intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
         args.unshift(changingState)
         fn.apply(undefined, args)
       }
@@ -391,14 +394,14 @@ interface RootState extends AnyState { }
         return (leaves.length === 0) ? [this.root] : leaves
       }
     , enterFn: (state: State, data?: any) => {
-        if(DEBUG) console.log("entering " + state.name)
+        if(DEBUGLOG) console.log("entering " + state.name)
       }
     , enter: function(fn: StateCallback){
         this.enterFn = fn
         return this
       }
     , exitFn: (state: State) => {
-        if(DEBUG) {
+        if(DEBUGLOG) {
           console.log("exiting: " + state.name + " history of " + state.parentState.name)
         }
       }
@@ -428,18 +431,17 @@ interface RootState extends AnyState { }
   }
 
 
-  var makeStateTree = function() { return StateChart(new State("root"), makeStateTree) }
+  var makeStateTree : MakeStateTree = function() { return StateChart(new State("root"), makeStateTree) }
 
   // module is a reserved word in TypeScript, guess I need to use their module thing
   // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }
   if (typeof window !== "undefined") { window['makeStateTree'] = makeStateTree; }
   if (typeof  ender === 'undefined') { this['makeStateTree'] = makeStateTree; }
   if (typeof define === "function" && define.amd) { define("makeStateTree", [], function () { return makeStateTree; }); }
-}).call(this, lodash)
+}).call(this, window['lodash'] || _)
 
 // imports
-declare var lodash
-declare var makeStateTree: MakeStateTree
+declare var _
 
 // for exports
 declare var ender

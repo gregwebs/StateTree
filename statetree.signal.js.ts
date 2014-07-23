@@ -7,7 +7,9 @@ interface Transition {
 
 interface Signal {
   name: string;
-  dispatch(args: any[]);
+  from(...froms: State[]): Signal
+  to(to: State): Signal
+  dispatch(args: any[]): void;
   transitions: Transition[];
   cb: Function;
   tree: StateChart;
@@ -57,7 +59,7 @@ interface Signal {
     return this
   }
 
-  Signal.prototype.to = function(to: State[]): Signal {
+  Signal.prototype.to = function(to: State): Signal {
     var trans = this.transitions[this.transitions.length - 1]
     if (trans.to) throw new Error("Signal setup encountered to() twice in a row")
     trans.to = to
@@ -69,10 +71,10 @@ interface Signal {
   if (typeof window !== "undefined") { window['makeStateTree']['Signal'] = Signal; }
   if (typeof  ender === 'undefined') { this['makeStateTree']['Signal'] = Signal; }
   if (typeof define === "function" && define.amd) { define(["makeStateTree"], function (makeStateTree) { makeStateTree.Signal = Signal; return ()=>{} }); }
-}).call(this, lodash)
+}).call(this, window['lodash'] || _)
 
 // imports
-declare var lodash
+declare var _
 
 // for exports
 declare var ender
