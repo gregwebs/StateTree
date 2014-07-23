@@ -9,21 +9,21 @@ interface StateChart {
     currentStates(): AnyState[];
     activeStates(): AnyState[];
     isActive: {
-        [name: string]: bool;
+        [name: string]: boolean;
     };
     statesByName: {
         [name: string]: AnyState;
     };
     stateFromName(name: string): AnyState;
-    handleError(e: Error, cb: () => void): bool;
-    defaultToHistory: bool;
-    defaultToHistoryState();
+    handleError(e: Error, cb: () => void): boolean;
+    defaultToHistory: boolean;
+    defaultToHistoryState(): void;
     enterFn(state: State): void;
     enterFn(state: State, data: any): void;
     exitFn(state: State): void;
     enter(fn: StateCallback): void;
     exit(fn: StateCallback): void;
-    safeCallback(cb: () => void): bool;
+    safeCallback(cb: () => void): boolean;
     signal(name: string, cb: Function): Function;
 }
 interface StateDataCallback {
@@ -46,20 +46,20 @@ interface AnyState extends HasStateCallbacks {
     childStates: State[];
     defaultSubState?: State;
     history?: State;
-    subStatesAreConcurrent: bool;
-    concurrentSubStates();
+    subStatesAreConcurrent: boolean;
+    concurrentSubStates(): State;
     enterFns: StateDataCallback[];
     exitFns: StateCallback[];
     subState(name: string, nestingFn?: (State: any) => void): State;
     defaultTo(state: State): State;
     changeDefaultTo(state: State): State;
     goTo(data?: any): State[];
-    defaultState();
+    defaultState(): State;
     activeSubState(): State;
-    onlyEnterThrough(...states: State[]);
+    onlyEnterThrough(...states: State[]): State;
     allowedFrom?: State[];
     setData(data: any): State;
-    isActive(): bool;
+    isActive(): boolean;
     activeChildState(): State;
     data: any;
     intersect(...states: State[]): StateIntersection;

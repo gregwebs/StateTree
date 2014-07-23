@@ -1,3 +1,4 @@
+/// <reference path="statetree.d.ts" />
 interface Transition {
     from: State[];
     to: State;
@@ -5,6 +6,8 @@ interface Transition {
 }
 interface Signal {
     name: string;
-    cb: Function;
+    dispatch(args: any[]);
     transitions: Transition[];
+    cb: Function;
+    tree: StateChart;
 }

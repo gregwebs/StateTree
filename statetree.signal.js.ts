@@ -7,21 +7,24 @@ interface Transition {
 
 interface Signal {
   name: string;
-  cb: Function;
+  dispatch(args: any[]);
   transitions: Transition[];
+  cb: Function;
+  tree: StateChart;
 }
 
 
 (function(_, undefined){
   // calling this a signal because like js-signals it doesn't use strings.
   // http://millermedeiros.github.com/js-signals/
-  function Signal(name: string){
+  function Signal(name: string, tree: StateChart){
     this.name = name
     this.transitions = [] 
+    this.tree = tree
   }
 
   // TODO: check parent-child relationship of states in allStatesHandled
-  Signal.prototype.dispatch = function(tree: StateChart, args: any[]): void {
+  Signal.prototype.dispatch = function(args: any[]): void {
     var data = this.cb && this.cb.apply(undefined, args)
     _.each(this.transitions, (trans: Transition) => {
       if (_.any(trans.from, (state: State) => state.isActive())) {

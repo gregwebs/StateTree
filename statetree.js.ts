@@ -9,15 +9,15 @@ interface StateChart {
 
   currentStates() : AnyState[];
   activeStates()  : AnyState[];
-  isActive        : {[name: string]: bool;};
+  isActive        : {[name: string]: boolean;};
   statesByName    : {[name: string]: AnyState;};
   stateFromName(name: string): AnyState;
 
   // return of false means stop transitioning
-  handleError(e: Error, cb: () => void): bool;
+  handleError(e: Error, cb: () => void): boolean;
 
-  defaultToHistory : bool;
-  defaultToHistoryState();
+  defaultToHistory : boolean;
+  defaultToHistoryState(): void;
 
   enterFn(state: State): void;
   enterFn(state: State, data: any): void;
@@ -26,7 +26,7 @@ interface StateChart {
   enter(fn: StateCallback): void;
   exit( fn: StateCallback): void;
 
-  safeCallback(cb: () => void): bool;
+  safeCallback(cb: () => void): boolean;
 
   // could type this a little better, but then would require types from statetree.signal.js
   signal(name: string, cb: Function): Function;
@@ -56,8 +56,8 @@ interface AnyState extends HasStateCallbacks {
   defaultSubState?: State;
   history?: State;
 
-  subStatesAreConcurrent: bool;
-  concurrentSubStates();
+  subStatesAreConcurrent: boolean;
+  concurrentSubStates(): State;
 
   enterFns: StateDataCallback[];
   exitFns:  StateCallback[];
@@ -67,14 +67,14 @@ interface AnyState extends HasStateCallbacks {
   changeDefaultTo(state: State): State;
 
   goTo(data?:any): State[];
-  defaultState();
+  defaultState(): State;
   activeSubState(): State;
 
-  onlyEnterThrough(...states: State[]);
+  onlyEnterThrough(...states: State[]): State;
   allowedFrom?: State[];
 
   setData(data: any): State;
-  isActive(): bool;
+  isActive(): boolean;
   activeChildState(): State;
 
   // user state local storage
@@ -167,7 +167,7 @@ interface RootState extends AnyState { }
     return this
   }
 
-  State.prototype.isActive = function(): bool {
+  State.prototype.isActive = function(): boolean {
     return !!this.statechart.isActive[this.name]
   }
 
@@ -175,7 +175,7 @@ interface RootState extends AnyState { }
     return _.find(this.childStates, (state) => state.isActive())
   }
 
-  function exitStates(exited: State[]): bool {
+  function exitStates(exited: State[]): boolean {
     return _.any(exited.reverse(), (state: State) => {
       var stopTransition = _.any(state.exitFns, (exitFn) =>
         !state.statechart.safeCallback(() => {exitFn(state)})
@@ -293,7 +293,7 @@ interface RootState extends AnyState { }
     })
 
     if (exitStates(exited)) { return returnWith(null) }
-    if (_.any(entered, (state: State): bool => {
+    if (_.any(entered, (state: State): boolean => {
           var dataParam = this.name === state.name ? data : undefined
           var stopTransition = _.any(state.enterFns, (enterFn) => {
             !statechart.safeCallback(() => {enterFn(state, dataParam)})
@@ -406,7 +406,7 @@ interface RootState extends AnyState { }
         this.exitFn = fn
         return this
       }
-    , safeCallback: function(cb: () => void): bool {
+    , safeCallback: function(cb: () => void): boolean {
         if (!cb) { return true }
         try {
           cb()
@@ -417,10 +417,10 @@ interface RootState extends AnyState { }
         }
       }
     , signal: function(name: string, cb: Function){
-        var signal = new Signal(name)
+        var signal = new Signal(name, this)
         cb(signal)
         signal.allStatesHandled()
-        return () => signal.dispatch(this, arguments)
+        return () => signal.dispatch(arguments)
       }
     }
     root.statechart = chart;
@@ -439,9 +439,8 @@ interface RootState extends AnyState { }
 
 // imports
 declare var lodash
+declare var makeStateTree: MakeStateTree
 
 // for exports
 declare var ender
 declare var define
-declare var module
-
