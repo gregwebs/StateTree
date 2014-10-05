@@ -8,26 +8,28 @@ A statechart is similar to a FSM (finite state machine), but extends the concept
 
 ## Why statecharts?
 
-An application needs to determine how it should respond to user interaction based on the current state of the application.
+An application responds to user interaction based on the previous state of the application.
 Most applications have a lot of implicit and ad-hoc state mutation that is difficult to understand and leads to bugs.
-In a simple app it is easy enough to manage by reducing state and paying attention to detail.
+In a simple app it is easy enough to manage by removing unecessary state and paying attention to detail.
 However, as applications become complex this gives every new feature the potential to break existing features.
-Statecharts were originally created to wrangle the complexity of jet fighter software, but I think they can scale down nicely to even simple applications.
+Statecharts were originally created to wrangle the complexity of jet fighter software, but they can scale down nicely to even simple applications.
 Rather than having implicit state mutation, Statecharts allow us to be very explicit about state and how it can be changed.
-This leads to fewer defects, lets us reason about how our application operates, and even explain it to non-programmers.
+This leads to fewer defects, lets us reason about how our application operates, and even explain the operation to non-programmers.
 
-Every feature in this library was created to satisfy a need in an [application](https://apps.facebook.com/yaptvguide/).
+Every feature in this library was created to solve problems in an [existing](https://apps.facebook.com/yaptvguide/) [application](https://app.doxiq.com).
 
 
 ## Why not FSMs?
 
-FSMs lack nested and concurrent states
+A statechart is an extension to the FSM concept to allow for nesting and concurrent states
 
 
 ## Why not routing?
 
-Routing is often used to describe application state. However, routing has difficulty handling concurrent states, handling nested state transitions, and maintaining history of different branches.
-Ember.js has taken a great approach of combining routing with a statechart. However, their code, including the underlying statemachine library does not work outside of the Ember framework.
+Routing is often used to describe application state.
+However, routing has difficulty handling concurrent states, handling nested state transitions, and maintaining history of different branches.
+Ember.js has taken a great approach of combining routing with a statechart.
+However, their code, including the underlying statemachine library does not work outside of the Ember framework.
 
 
 ## StateTree
@@ -35,6 +37,12 @@ Ember.js has taken a great approach of combining routing with a statechart. Howe
 StateTree is an implementation of the statechart concept. 
 The name comes from how a statechart can be modeled as a tree (hierarchy).
 StateTree can have multiple active branches (concurrency).
+
+StateTree was developed for managing the state of a [single-page client-side UI](https://apps.facebook.com/yaptvguide) where the user is able to navigate around the entire UI.
+StateTree is different from most FSM and statecharts because the base library assumes that state transitions are allowed.
+This removes a lot of boilerplate when this assumpiton is correct.
+To restrict state, look at the signal add-on.
+
 Perhaps the biggest feature of StateTree is safety.
 
 
@@ -42,7 +50,8 @@ Perhaps the biggest feature of StateTree is safety.
 
 Other statechart libraries ask you to give a large JSON structure to describe your state chart.
 JSON hierarchy looks nice, but these structures normally rely on strings that are a typo away from silent error.
-StateTree instead uses setter methods (aka builder pattern similar to other libraries such as d3) because they will always fail immediately at runtime if mistyped. With Typescript they fail at compile time.
+StateTree instead uses setter methods (aka builder pattern similar to other libraries such as d3) because they will always fail immediately at runtime if mistyped.
+With Typescript they fail at compile time.
 
 StateTree is also designed to check for error conditions as soon as possible (usually during configuration) and immediately throw an exception.
 If you use TypeScript (or always call the library functions using the correct types), the goal is for there to be no way to use the library that leads to undefined behavior.
@@ -50,37 +59,22 @@ If you use TypeScript (or always call the library functions using the correct ty
 
 #### Typescript
 
-StateTree leverages TypeScript to reduce bugs in the implementation.
+StateTree leverages TypeScript to reduce bugs in the implementation and in user code.
 If you are a TypeScript user you can use the provided types to move some errors from runtime to compile time and also to have better autocompletion.
 If you are not a TypeScript user, just ignore the non-js files.
-
-
-### Background
-
-StateTree was developed for managing the state of a [single-page client-side UI](https://apps.facebook.com/yaptvguide) where the user is able to navigate around the entire UI.
-There are few illegal state transitions in such a scenario.
-Rather than have the user wire an event for every transition, you simply goto the state you would like with state.goTo()
-There is one function to restrict state transitions: `onlyEnterThrough`.
-
-After success with application state, I wanted to use StateTree for more traditional FSM tasks.
-An experimental signal (event) implementation is now available in statetree.signal.js
-When this extension matures StateTree should be suitable for any state machine problem.
 
 
 ### Alternatives
 
 * Stativus is a fully-featured statechart library.
 * If you are using Sproutcore or Ember, they have their own statechart library with a dependency on the frameworks.
-* [statechart](https://github.com/DavidDurman/statechart). Limitations: does not offer concurrent substates.
+* [statechart](https://github.com/DavidDurman/statechart): does not offer concurrent substates.
 
 StateTree is MIT licensed and does not require any frameworks (but does currently have a lodash/underscore dependency).
 
-I passed on the latter statechart library over because it was originally in somewhat of an abandoned state. It was undocumented and GPL licensed, but it has since been switched to an MIT license and documentation has been added.
+When StateTree was originally authored, the latter statechart library was in somewhat of an abandoned state, undocumented, and GPL licensed. It has since been switched to an MIT license and documentation has been added.
 
-I have reviewed other libraries, but Stativus is the only one I have used.
-Stativus requires you to define state transtition events, which is required for certain use cases, but burdensome for some of mine.
-I ran into buggy or undefined behavior with Stativus where no error was thrown, but things just didn't work in the way I thought they would, and I had great difficulty tracking the issue down in the source code and decided it would be better just to roll my own solution.
-
+Stativus has buggy or at least undefined behavior where no error is thrown, and no log message is given, but the library doesn't work as expected. Tracking down these issues in the source code was very difficult, which motivated the creation of StateTree.
 
 
 
@@ -345,7 +339,7 @@ Now you can use this service in your controller
 There are already a lot of routing libraries out there, so right now I want to take the approach of writing adapters.
 
 There is an [AngularJS adapter available](
-https://github.com/yaptv/StateTree/blob/master/statetree.routes.angular.js.ts
+https://github.com/gregwebs/StateTree/blob/master/statetree/statetree.routes.angular.js.ts
 ).
 See the comments at the top of the file on how to set it up and also the API.
 This is all a work in progress, but it works well for me.
