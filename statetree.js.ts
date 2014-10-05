@@ -446,3 +446,7 @@ declare var _
 // for exports
 declare var ender
 declare var define
+
+declare module "StateTree" {
+    export = makeStateTree;
+}

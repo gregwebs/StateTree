@@ -69,3 +69,6 @@ interface State extends AnyState {
 }
 interface RootState extends AnyState {
 }
+declare module "StateTree" {
+    export = makeStateTree;
+}
