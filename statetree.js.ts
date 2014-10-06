@@ -334,7 +334,7 @@ interface RootState extends AnyState { }
   StateIntersection.prototype.enter = function(fn: (StateIntersection) => void): void {
     var enterFn = (changingState: State, ...args: any[]) => {
       if (_.all(this.states, (state) => state.name === changingState.name || state.isActive())) {
-        if (DEBUGLOG) { console.log('enter intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
+        if (DEBUGLOG) { DEBUGLOG.log('enter intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
         args.unshift(changingState)
         fn.apply(undefined, args)
       }
@@ -345,7 +345,7 @@ interface RootState extends AnyState { }
   StateIntersection.prototype.exit = function(fn:(StateIntersection) => void): void {
     var exitFn = (changingState: State, ...args: any[]) => {
       if (_.all(this.states, (state) => state.name === changingState.name || !state.isActive())) { 
-        if (DEBUGLOG) { console.log('exit intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
+        if (DEBUGLOG) { DEBUGLOG.log('exit intersection: ' + _.map(this.states, (state: State) => state.name).join(' & ')) }
         args.unshift(changingState)
         fn.apply(undefined, args)
       }
@@ -375,8 +375,8 @@ interface RootState extends AnyState { }
       }
     , isActive: isActive
     , handleError: (e: EnhancedError) => {
-        if(e.message) console.log(e.message)
-        if(e.stack)   console.log(e.stack)
+        if(e.message) DEBUGLOG.log(e.message)
+        if(e.stack)   DEBUGLOG.log(e.stack)
         return false
       }
       // if true, always use the history state once it is available as the default state
@@ -398,7 +398,7 @@ interface RootState extends AnyState { }
         return (leaves.length === 0) ? [this.root] : leaves
       }
     , enterFn: (state: State, data?: any) => {
-        if(DEBUGLOG) console.log("entering " + state.name)
+        if(DEBUGLOG) DEBUGLOG.log("entering " + state.name)
       }
     , enter: function(fn: StateCallback){
         this.enterFn = fn
@@ -406,7 +406,7 @@ interface RootState extends AnyState { }
       }
     , exitFn: (state: State) => {
         if(DEBUGLOG) {
-          console.log("exiting: " + state.name + " history of " + state.parentState.name)
+          DEBUGLOG.log("exiting: " + state.name + " history of " + state.parentState.name)
         }
       }
     , exit: function(fn: StateCallback){

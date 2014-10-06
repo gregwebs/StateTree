@@ -274,7 +274,7 @@
                 return state.name === changingState.name || state.isActive();
             })) {
                 if (DEBUGLOG) {
-                    console.log('enter intersection: ' + _.map(_this.states, function (state) {
+                    DEBUGLOG.log('enter intersection: ' + _.map(_this.states, function (state) {
                         return state.name;
                     }).join(' & '));
                 }
@@ -298,7 +298,7 @@
                 return state.name === changingState.name || !state.isActive();
             })) {
                 if (DEBUGLOG) {
-                    console.log('exit intersection: ' + _.map(_this.states, function (state) {
+                    DEBUGLOG.log('exit intersection: ' + _.map(_this.states, function (state) {
                         return state.name;
                     }).join(' & '));
                 }
@@ -332,9 +332,9 @@
             isActive: isActive,
             handleError: function (e) {
                 if (e.message)
-                    console.log(e.message);
+                    DEBUGLOG.log(e.message);
                 if (e.stack)
-                    console.log(e.stack);
+                    DEBUGLOG.log(e.stack);
                 return false;
             },
             defaultToHistory: false,
@@ -361,7 +361,7 @@
             },
             enterFn: function (state, data) {
                 if (DEBUGLOG)
-                    console.log("entering " + state.name);
+                    DEBUGLOG.log("entering " + state.name);
             },
             enter: function (fn) {
                 this.enterFn = fn;
@@ -369,7 +369,7 @@
             },
             exitFn: function (state) {
                 if (DEBUGLOG) {
-                    console.log("exiting: " + state.name + " history of " + state.parentState.name);
+                    DEBUGLOG.log("exiting: " + state.name + " history of " + state.parentState.name);
                 }
             },
             exit: function (fn) {
