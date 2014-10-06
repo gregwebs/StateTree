@@ -1,3 +1,4 @@
+
 (function (_, undefined) {
     var DEBUG = true;
     var DEBUGLOG = DEBUG && window.console;
@@ -211,6 +212,7 @@
             if (!state.allowedFrom || state.allowedFrom.length === 0)
                 return;
 
+            // My use case was only looking at the state that goTo is called on
             if ((state.allowedFrom.indexOf(_this.name) === -1) && (state.name !== _this.name)) {
                 throw new Error("cannot transition to state '" + state.name + "' from '" + _this.name + "'. Allowed states: " + state.allowedFrom.join(", "));
             }
@@ -398,10 +400,12 @@
         return chart;
     }
 
-    var makeStateTree = function () {
-        return StateChart(new State("root"), makeStateTree);
+    var makeStateTree = function (config) {
+        return StateChart(new State(config.name || "root"), makeStateTree);
     };
 
+    // module is a reserved word in TypeScript, guess I need to use their module thing
+    // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }
     if (typeof window !== "undefined") {
         window['makeStateTree'] = makeStateTree;
     }
@@ -414,4 +418,6 @@
         });
     }
 }).call(this, window['lodash'] || _);
+
+
 //# sourceMappingURL=statetree.js.map

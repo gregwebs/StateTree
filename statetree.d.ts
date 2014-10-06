@@ -1,8 +1,13 @@
+declare var makeStateTree: MakeStateTree;
 interface EnhancedError extends Error {
     stack: any;
 }
+interface StateTreeConfig {
+    name?: string;
+    log?: any;
+}
 interface MakeStateTree {
-    (): StateChart;
+    (StateTreeConfig: any): StateChart;
 }
 interface StateChart {
     root: RootState;
@@ -69,6 +74,9 @@ interface State extends AnyState {
 }
 interface RootState extends AnyState {
 }
+declare var _: any;
+declare var ender: any;
+declare var define: any;
 declare module "StateTree" {
     export = makeStateTree;
 }

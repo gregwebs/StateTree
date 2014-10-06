@@ -4,7 +4,11 @@ interface EnhancedError extends Error {
   stack: any;
 }
 
-interface MakeStateTree { ():StateChart; }
+interface StateTreeConfig {
+  name?: string
+  log?: any
+}
+interface MakeStateTree { (StateTreeConfig):StateChart; }
 
 interface StateChart {
   root            : RootState;
@@ -350,9 +354,9 @@ interface RootState extends AnyState { }
   }
 
   function StateChart(root: RootState, extensions: any): StateChart {
-    var statesByName = {}
+    var statesByName : {[name: string]: AnyState} = {}
     statesByName[root.name] = root
-    var isActive = {}
+    var isActive : {[name: string]: boolean} = {}
     isActive[root.name] = true
     var Signal = extensions.Signal || function(){
       throw new Error("error using tree.signal(): statetree.signal.js is not loaded")
@@ -364,7 +368,7 @@ interface RootState extends AnyState { }
     , statesByName: statesByName
       // get a state object from its name.
       // throw error if state name does not exist
-    , stateFromName: (name: string): State => {
+    , stateFromName: (name: string): AnyState => {
         var res = statesByName[name]
         if (!res) throw new Error("invalid state name: " + name)
         return res
@@ -431,7 +435,7 @@ interface RootState extends AnyState { }
   }
 
 
-  var makeStateTree : MakeStateTree = function() { return StateChart(new State("root"), makeStateTree) }
+  var makeStateTree : MakeStateTree = function(config) { return StateChart(new State(config.name || "root"), makeStateTree) }
 
   // module is a reserved word in TypeScript, guess I need to use their module thing
   // if(typeof this.module !== "undefined" && module.exports) { module.exports = makeStateTree; }
